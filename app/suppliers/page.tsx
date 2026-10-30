@@ -16,7 +16,7 @@ export default function SupplierPage(){
  const visible=useMemo(()=>rows.filter(x=>filter==='ALL'||x.branch===filter),[rows,filter]);
  const input='w-full rounded border border-slate-300 px-3 py-2 text-slate-900 bg-white';
  const label='text-sm font-medium text-slate-700';
- return <main className="mx-auto max-w-6xl p-6 space-y-6 text-slate-900"><header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-bold">Supplier Management</h1><p className="text-sm text-slate-600">Purchase-to-vehicle / Job Order matching and payment monitoring</p></div><a className="underline" href="/">Back to Cashier</a></header>
+ return <main className="mx-auto max-w-6xl p-6 space-y-6 text-slate-900"><header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-bold">Supplier Management</h1><p className="text-sm text-slate-600">Purchase-to-vehicle / Job Order matching and payment monitoring</p></div><div className="flex gap-3"><a className="underline" href="/supplier-controls">Open Unit Costs & Petty Cash Pilot</a><a className="underline" href="/">Back to Cashier</a></div></header>
  <div className="rounded border border-amber-300 bg-amber-50 p-3 text-sm">Pilot module: saved only in this browser. Not shared between devices or branches; no authenticated approvals. Do not use as a final accounting or payment verification record.</div>
  {error&&<div role="alert" className="rounded border border-red-300 bg-red-50 p-3">{error}</div>}
  <form onSubmit={add} className="rounded-lg border bg-white p-4 space-y-4"><h2 className="text-lg font-semibold">New supplier purchase</h2><div className="grid gap-3 md:grid-cols-3">
