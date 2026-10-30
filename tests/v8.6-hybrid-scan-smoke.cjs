@@ -1,0 +1,31 @@
+const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');
+const ts=require('/opt/nvm/versions/node/v22.16.0/lib/node_modules/typescript');const root=path.join(__dirname,'..');
+function data(){const f=fs.readFileSync(path.join(root,'lib/data.ts'),'utf8');const r=ts.transpileModule(f,{fileName:'lib/data.ts',reportDiagnostics:true,compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}});assert.equal((r.diagnostics||[]).filter(d=>d.category===1).length,0);const m={exports:{}};new Function('module','exports','require',r.outputText)(m,m.exports,require);return m.exports;}
+const d=data();let db=require('./legacy-fixture.cjs')(d);const proof={name:'physical-delivery.jpg',data:'data:image/jpeg;base64,AAAB'};
+function add(barcode,mode='quantity',branch='UCM'){db=d.registerInventoryProduct(db,{branch,barcode,name:`Demo ${barcode}`,category:'Automotive Parts & Products',unit:'Piece',unitCost:100,sellPrice:200,reorderAt:2,initialQty:0,trackingMode:mode},'u-admin');return db.inventory.find(p=>p.barcode===barcode);}
+const oil=add('OIL001');const other=add('OIL001','quantity','UCQC');const serialized=add('BATT001','serialized');
+assert.throws(()=>d.submitStockReceipt(db,[{productId:oil.id,qty:3}],'DR-1','', 'u-cashier'),/receipt/);
+assert.throws(()=>d.submitStockReceipt(db,[{productId:oil.id,qty:3},{productId:oil.id,qty:3}],'DR-1','','u-cashier',proof),/Duplicate item/);
+assert.throws(()=>d.submitStockReceipt(db,[{productId:other.id,qty:3}],'DR-1','','u-cashier',proof),/branch/);
+assert.throws(()=>d.submitStockReceipt(db,[{productId:serialized.id,qty:2,unitCodes:['UNIT01','UNIT01']}],'DR-1','','u-cashier',proof),/Duplicate unit/);
+assert.throws(()=>d.submitStockReceipt(db,[{productId:serialized.id,qty:2,unitCodes:['UNIT01']}],'DR-1','','u-cashier',proof),/one unique/);
+db=d.submitStockReceipt(db,[{productId:oil.id,qty:4},{productId:serialized.id,qty:2,unitCodes:['UNIT01','UNIT02']}],'DR-22','Supplier delivery','u-cashier',proof);
+const receipt=db.stockReceipts[0];assert.equal(receipt.status,'Pending');assert.equal(d.stockAvailable(db,oil),0);assert.equal(d.stockAvailable(db,serialized),0);
+assert.throws(()=>d.reviewStockReceipt(db,receipt.id,true,'u-cashier',true),/Only Admin/);
+assert.throws(()=>d.reviewStockReceipt(db,receipt.id,true,'u-admin',false),/physical count/);
+db=d.reviewStockReceipt(db,receipt.id,true,'u-admin',true,'Checked items and delivery receipt');assert.equal(d.stockAvailable(db,oil),4);assert.equal(d.stockAvailable(db,serialized),2);assert.equal(d.stockAvailable(db,other),0);
+assert.throws(()=>d.reviewStockReceipt(db,receipt.id,true,'u-admin',true),/pending/);
+assert.throws(()=>d.submitStockReceipt(db,[{productId:serialized.id,qty:1,unitCodes:['UNIT01']}],'DR-23','','u-cashier',proof),/Duplicate unit/);
+const pos={id:'pos-hybrid',no:'UCM-POS-001',branch:'UCM',plate:'214UWI',vehicle:'Toyota Vios 2020',date:d.todayPH(),client:'Test',phone:'',concern:'',items:[],payments:[],status:'Pending',createdBy:'u-cashier',createdAt:new Date().toISOString()};db.pos.push(pos);
+assert.throws(()=>d.confirmStockOutBatch(db,pos.id,[{productId:oil.id,qty:3},{productId:oil.id,qty:1}],'u-cashier'),/Duplicate product/);
+assert.throws(()=>d.confirmStockOut(db,serialized.id,pos.id,1,'u-cashier'),/unique, available/);
+assert.throws(()=>d.confirmStockOut(db,serialized.id,pos.id,1,'u-cashier',['UNKNOWN']),/unique, available/);
+const before=db.stockMovements.length;
+assert.throws(()=>d.confirmStockOutBatch(db,pos.id,[{productId:oil.id,qty:2},{productId:serialized.id,qty:2,unitCodes:['UNIT01','FAKE']}],'u-cashier'),/unique, available/);
+assert.equal(db.stockMovements.length,before,'All-or-nothing batch transaction');
+db=d.confirmStockOutBatch(db,pos.id,[{productId:oil.id,qty:2},{productId:serialized.id,qty:1,unitCodes:['UNIT01']}],'u-cashier');assert.equal(d.stockAvailable(db,oil),2);assert.equal(d.stockAvailable(db,serialized),1);
+assert.equal(d.posCostTotals(pos,db).inventory,300);
+const serialOut=db.stockMovements.find(m=>m.kind==='StockOut'&&m.productId===serialized.id);db=d.requestStockReturn(db,serialOut.id,1,'Unused battery','u-cashier');db=d.decideStockReturn(db,db.stockRequests[0].id,true,'u-admin');assert.equal(d.stockAvailable(db,serialized),2);
+assert.deepEqual(db.stockMovements[0].unitCodes,['UNIT01']);
+const panel=fs.readFileSync(path.join(root,'components/StockScanPanel.tsx'),'utf8');const page=fs.readFileSync(path.join(root,'app/page.tsx'),'utf8');assert(panel.includes('Step 1: Scan'));assert(panel.includes('setRows(current=>[...current'));assert(panel.includes('Repeat scans are logged neither as new units nor new rows'));assert(page.includes('Add Stock · Single / Bulk Scan'));assert(page.includes('Request Stock Release · Single / Bulk Scan'));assert(page.includes('Stock In — Physical Verification Queue'));
+console.log('PASS v8.6: dual-mode cashier single/bulk, duplicate scan prevention, independent physical verification, per-branch counts, serialized unique units, atomic locked consumption, Admin-approved unit returns.');

@@ -1,0 +1,37 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const ts=require('typescript');
+const root=path.resolve(__dirname,'..');
+const read=(p)=>fs.readFileSync(path.join(root,p),'utf8');
+const compile=(path)=>ts.transpileModule(read(path),{fileName:path,reportDiagnostics:true,compilerOptions:{target:ts.ScriptTarget.ES2020,jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS}});
+const load=(p,resolver)=>{const module={exports:{}};vm.runInNewContext(`(function(require,module,exports){${compile(p).outputText}\n})`,{console,Date,Intl,TextEncoder,Uint8Array,Blob,Map,Set})(resolver,module,module.exports);return module.exports;};
+const studio=load('lib/report-studio.ts',()=>({}));
+assert.equal(studio.STUDIO_KEY,'uc_report_studio_v1','Retain existing browser-local report files');
+const old={id:'a',kind:'sheet',title:'Legacy',status:'Draft',ownerId:'1',ownerName:'User',branch:'UCM',rows:studio.newGrid(3,3),html:'',createdAt:'',updatedAt:'',sourceName:'',sourceDate:'',sourceCount:0};
+const existing=studio.parseStudioFiles(JSON.stringify([old]))[0];
+assert.equal(studio.getWorksheets(existing).length,1,'Legacy single-sheet files still open');
+assert.equal(studio.activeWorksheet(existing).name,'Sheet 1');
+const next=studio.changeWorksheet(existing,{id:'sheet-1',name:'Inventory',rows:[['Barcode','Qty'],['B-123','12']],styles:{'0:0':{bold:true,background:'#e0ffe0'}}});
+assert.equal(next.rows[1][1],'12','Legacy rows mirror first worksheet');
+assert.equal(studio.activeWorksheet(next).name,'Inventory');
+next.sheets.push({id:'second',name:'Sales',rows:[['POS','Total'],['A','250']]});next.activeSheetId='second';
+assert.equal(studio.activeWorksheet(next).rows[1][1],'250','Multiple worksheets supported');
+assert.equal(studio.displayCell([['10','=A1*1.12']],0,1),'11.2','Arithmetic still works');
+assert.deepEqual(JSON.stringify(studio.parseCsv('"POS, No","Amount"\r\n"A1",200\r\n"B2","line\nbreak"')),JSON.stringify([['POS, No','Amount'],['A1','200'],['B2','line\nbreak']]));
+assert.equal(studio.colName(26),'AA');assert.equal(studio.colName(51),'AZ');
+assert.equal(studio.SHEET_MAX_ROWS>=1000,true);assert.equal(studio.SHEET_MAX_COLS>=52,true);
+const exportLib=load('lib/office-export.ts',id=>id==='./report-studio'?studio:{});
+const blob=exportLib.exportXlsx(studio.getWorksheets(next));
+assert.ok(blob.size>1000&&blob.type==='application/zip','Must create actual multi-sheet Office ZIP, not renamed CSV');
+for(const p of ['components/SheetWorkbench.tsx','components/DocumentWorkbench.tsx','components/ReportStudio.tsx','lib/office-import.ts','lib/office-export.ts','lib/office-html.ts']){
+ const errors=compile(p).diagnostics?.filter(d=>d.category===ts.DiagnosticCategory.Error)||[];
+ assert.equal(errors.length,0,`${p} must parse`);
+}
+const sheets=read('components/SheetWorkbench.tsx'),docs=read('components/DocumentWorkbench.tsx'),studioUi=read('components/ReportStudio.tsx');
+for(const feature of ['importXlsx','parseCsv','getWorksheets','undoRef','redoRef','office-sheet-tabs','office-grid','cellStyleKey','replaceAll','onPaste'])assert.ok(sheets.includes(feature),`Sheets requires ${feature}`);
+for(const feature of ['importDocx','formatBlock','createLink','insertUnorderedList','addTable','findNext','office-doc-paper','contentEditable'])assert.ok(docs.includes(feature),`Docs requires ${feature}`);
+for(const feature of ['exportXlsx','exportDocx','SheetWorkbench','DocumentWorkbench','STUDIO_KEY','canDeleteStudio','canReviewStudio'])assert.ok(studioUi.includes(feature),`Report Studio integration requires ${feature}`);
+assert.match(read('public/sw.js'),/uc-fund-shell-v(?:9-(?:[7-9]|1[01])|9(?:23|24|25))/,'Refresh PWA shell on deployment');
+console.log('PASS v9.7: legacy files, multiple tabs, 1000-row grid, formulas, CSV parser, Office ZIP exports, editor import/toolbars, review security, and Vercel cache update.');

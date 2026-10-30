@@ -1,0 +1,43 @@
+{
+  "name": "underchargers-fund-management-pwa",
+  "version": "9.25.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test:logic": "npm run test:profitability && npm run test:ui-clean && node tests/v9.23-ui-spacing-smoke.cjs && node tests/v9.22-automatic-paper-smoke.cjs && node tests/v9.21-generated-disbursement-smoke.cjs && node tests/v9.20.1-pb-plate-suggestions-smoke.cjs && node tests/v9.20-pb-multibranch-smoke.cjs && node tests/v9.19-disbursement-requests-smoke.cjs && node tests/v9.18-clickable-logins-smoke.cjs && node tests/v9.17.1-login-preservation-smoke.cjs && node tests/v9.17-optional-parts-and-local-clear-smoke.cjs && node tests/v9.16-zero-seed-setup-smoke.cjs && node tests/v9.15-deposit-wizard-smoke.cjs && node tests/logic-smoke.cjs && node tests/revisions-smoke.cjs && node tests/v3-print-fixtures.cjs && node tests/v4-disbursement-smoke.cjs && node tests/v5-revisions-smoke.cjs && node tests/v6-automatic-link-smoke.cjs && node tests/v7-branch-approvals-smoke.cjs && node tests/v7-print-fixtures.cjs && node tests/v8-stock-out-smoke.cjs && node tests/v8.3-product-permissions-smoke.cjs && node tests/v8.4-empty-inventory-smoke.cjs && node tests/v8.5-bulk-scan-smoke.cjs && node tests/v8.6-hybrid-scan-smoke.cjs && node tests/v8.7-draft-stockin-smoke.cjs && node tests/v8.8-initial-stock-smoke.cjs && node tests/v8.9-stock-persistence-smoke.cjs && node tests/v9.1-cost-only-smoke.cjs && node tests/v9.2-controlled-inventory-smoke.cjs && node tests/v9.3-report-studio-smoke.cjs && node tests/v9.4-separate-workspaces-smoke.cjs && node tests/v9.5-standalone-office-smoke.cjs && node tests/v9.6-vercel-office-routes-smoke.cjs && node tests/v9.7-office-workspaces-smoke.cjs && node tests/v9.8-terminal-transactions-smoke.cjs && node tests/v9.9-clean-pos-smoke.cjs && node tests/v9.10-pos-entry-smoke.cjs && node tests/v9.11-receipt-and-cogs-smoke.cjs && node tests/v9.12-unit-drafts-quotation-smoke.cjs && node tests/v9.13-pos-draft-deletion-smoke.cjs",
+    "test:reports": "node tests/v3-print-fixtures.cjs",
+    "test:disbursement": "node tests/v4-disbursement-smoke.cjs && node tests/v3-print-fixtures.cjs",
+    "test:v5": "node tests/v5-revisions-smoke.cjs",
+    "test:v6": "node tests/v6-automatic-link-smoke.cjs && node tests/v7-branch-approvals-smoke.cjs && node tests/v7-print-fixtures.cjs",
+    "test:inventory": "node tests/v8-stock-out-smoke.cjs",
+    "test:permissions": "node tests/v8.3-product-permissions-smoke.cjs && node tests/v8.4-empty-inventory-smoke.cjs && node tests/v8.5-bulk-scan-smoke.cjs && node tests/v8.6-hybrid-scan-smoke.cjs",
+    "test:studio": "node tests/v9.3-report-studio-smoke.cjs && node tests/v9.4-separate-workspaces-smoke.cjs && node tests/v9.5-standalone-office-smoke.cjs && node tests/v9.6-vercel-office-routes-smoke.cjs",
+    "test:terminal": "node tests/v9.8-terminal-transactions-smoke.cjs",
+    "check:components": "node scripts/check-components.cjs",
+    "prebuild": "npm run check:components && npm run check:view-maps && npm run typecheck",
+    "check:view-maps": "node scripts/check-view-maps.cjs",
+    "test:disbursement-requests": "node tests/v9.22.1-prepared-by-account-smoke.cjs && node tests/v9.22-automatic-paper-smoke.cjs && node tests/v9.21-generated-disbursement-smoke.cjs && node tests/v9.20-pb-multibranch-smoke.cjs && node tests/v9.19-disbursement-requests-smoke.cjs",
+    "test:ui-spacing": "node tests/v9.23-ui-spacing-smoke.cjs",
+    "test:ui-clean": "node tests/v9.24-clean-ui-smoke.cjs",
+    "test:profitability": "node tests/v9.25-profitability-analytics-smoke.cjs"
+  },
+  "dependencies": {
+    "next": "^15.5.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "lucide-react": "^0.468.0",
+    "pdf-lib": "^1.17.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0"
+  }
+}

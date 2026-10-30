@@ -1,0 +1,53 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const ts=require('typescript');
+const root=path.resolve(__dirname,'..');
+const read=p=>fs.readFileSync(path.join(root,p),'utf8');
+const component=read('components/ReportStudio.tsx');
+const sheetWorkbench=read('components/SheetWorkbench.tsx');
+const documentWorkbench=read('components/DocumentWorkbench.tsx');
+const route=read('components/StudioRoute.tsx');
+const homepage=read('app/page.tsx');
+const styles=read('app/globals.css');
+const reportLibrary=read('lib/report-studio.ts');
+for (const p of ['components/ReportStudio.tsx','components/SheetWorkbench.tsx','components/DocumentWorkbench.tsx','components/StudioRoute.tsx','app/sheets/page.tsx','app/docs/page.tsx','app/sheets/[fileId]/page.tsx','app/docs/[fileId]/page.tsx','app/page.tsx']){
+ const src=read(p);
+ const parsed=ts.transpileModule(src,{fileName:p,reportDiagnostics:true,compilerOptions:{target:ts.ScriptTarget.ES2020,module:ts.ModuleKind.ESNext,jsx:ts.JsxEmit.Preserve}});
+ const errs=(parsed.diagnostics||[]).filter(d=>d.category===ts.DiagnosticCategory.Error);
+ assert.equal(errs.length,0,`${p} must parse: ${errs.map(e=>ts.flattenDiagnosticMessageText(e.messageText,' ')).join(' ')}`);
+}
+for(const kind of ['sheet','document']){
+ const dir=kind==='sheet'?'sheets':'docs';
+ assert.match(read(`app/${dir}/page.tsx`),new RegExp(`kind="${kind}"`));
+ assert.match(read(`app/${dir}/[fileId]/page.tsx`),/fileId=\{fileId\}/);
+}
+assert.doesNotMatch(homepage,/\{\(view==='spreadsheets'\|\|view==='documents'\).*?<ReportStudio/);
+assert.match(homepage,/href=\{studioHomeHref\(item\.key===/);
+assert.match(route,/sessionStorage\.getItem\('uc_fund_session'\)/);
+assert.match(route,/loadDB\(\)/);
+assert.match(route,/\?next=\$\{encodeURIComponent\(target\)\}/, 'Deep-linked files must return after login');
+assert.match(homepage,/safeStudioReturnPath\(new URLSearchParams\(window\.location\.search\)/);
+assert.match(route,/studioSources\(db,user\.role,user\.branch,branchScope,fromDate,toDate\)/);
+assert.match(route,/!user\|\|!db/,'Guest must not see file list or editor');
+assert.match(reportLibrary,/encodeURIComponent\(file\.id\)/);
+assert.match(component,/STUDIO_KEY/);
+assert.match(reportLibrary,/uc_report_studio_v1/,'Existing v9.3/v9.4 local files must remain accessible');
+assert.match(component,/f\.ownerId===userId\|\|role==='admin'/,'File access remains role-filtered');
+assert.match(component,/canEditStudio\(f,userId,role\)/,'Approve and submitted files remain locked');
+assert.match(component,/canReviewStudio\(active,userId,role\)/);
+assert.match(component,/canDeleteStudio\(file,userId\)/);
+assert.match(component,/window\.confirm\(`/);
+assert.match(component,/localStorage\.setItem\(STUDIO_KEY,JSON\.stringify\(next\)\)/,'Persist before switching to new file route');
+assert.match(component,/window\.addEventListener\('storage',onStorage\)/,'Cross-tab changes should refresh visible file list');
+assert.match(component,/sourceToHtmlTable\(source\)/);
+assert.match(component,/cloneSourceRows\(source\)/);
+assert.match(documentWorkbench,/role="textbox"/);
+assert.match(sheetWorkbench,/className="office-grid"/);
+assert.match(sheetWorkbench,/onPaste=\{e=>pasteGrid\(e,r,c\)\}/);
+assert.match(component,/office-library-table/);
+assert.match(component,/office-editor-header/);
+assert.match(styles,/\.office-doc-paper/);
+assert.match(styles,/\.office-grid/);
+assert.match(styles,/@media\(max-width:600px\)/);
+console.log('v9.5 tests passed: independent home/editor URLs, files linked from cashier, access checks, migration, editors, direct links, deletion and save behavior.');

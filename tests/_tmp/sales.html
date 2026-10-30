@@ -1,0 +1,69 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Closed Sales Summary</title><style>
+@page{size:A4 landscape;margin:7mm}*{box-sizing:border-box}html,body{margin:0;padding:0;color:#232831;font:9px Arial,Helvetica,sans-serif;background:white}
+.print-page{break-after:page;page-break-after:always;min-height:178mm}.print-page:last-child{break-after:auto;page-break-after:auto}
+header{height:21mm;display:flex;justify-content:space-between;align-items:start;border-bottom:2px solid #ecc00c;margin-bottom:3.2mm;padding-top:2mm}
+header .brand{font-size:13px;font-weight:800;letter-spacing:.55px}.logo-slot{font-size:8px;letter-spacing:0;color:#777;margin-top:4px}
+header h1{font-size:15px;margin:0 0 3px;font-weight:800}header small{font-size:9px;color:#535b63}
+.meta{display:flex;justify-content:space-between;gap:10px;margin:0 0 3mm;font-size:9px}.meta b{font-weight:700}
+table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:8px}th{height:6mm;background:#ffed9e;text-align:left;white-space:nowrap;overflow:hidden}td,th{border:1px solid #b9bec5;padding:1.05mm 1.25mm;vertical-align:middle}
+.data-table tbody tr{height:4.7mm;max-height:4.7mm;page-break-inside:avoid}.data-table td{height:4.7mm;max-height:4.7mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.data-table .clip{display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.num{text-align:right;white-space:nowrap}.center{text-align:center}.muted{color:#69727c}.mini{font-size:8px}.total{background:#ffed9e;font-weight:700}
+.footline{display:flex;justify-content:space-between;margin-top:2mm;color:#626872;font-size:8px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;margin:2mm 0}.metric{border:1px solid #c8ccd2;padding:2.1mm}.metric b{display:block;font-size:13px;margin-top:2mm}
+.summary-section{margin:2.2mm 0;break-inside:avoid}.summary-section h2{font-size:12px;padding-bottom:2mm;margin:0 0 2mm;border-bottom:1px solid #ddd}.compact-table{max-width:165mm}.compact-table td,.compact-table th{height:5.2mm;font-size:9px}
+.signature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10mm;margin-top:6mm}.signature{border-top:1px solid #2d2e35;text-align:center;padding-top:2mm;min-height:14mm}.signature .name{display:block;font-size:10px;font-weight:700}.signature .role{color:#6f7782;font-size:8px}.signature img{height:10mm;max-width:60mm;object-fit:contain;margin-top:-18mm;display:block;margin-left:auto;margin-right:auto}
+.receipt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4mm}.receipt{border:1px solid #c3c8d2;padding:3mm;height:65mm;break-inside:avoid;display:flex;flex-direction:column}.receipt img{max-height:49mm;max-width:100%;object-fit:contain;align-self:center}.receipt .name{display:flex;justify-content:space-between;margin-bottom:2mm}.notice{padding:3mm;border:1px solid #e3c953;background:#fff6d5;margin:3mm 0}.cat-pair{display:grid;grid-template-columns:1fr 1fr;gap:5mm}.voucher-series{font-size:7px;max-height:8mm;overflow:hidden}.notes{white-space:pre-line;line-height:1.5}
+/* v4: a single combined Disbursement + Replenishment sheet whenever it fits. */
+.fund-print{min-height:0;padding:0;}
+.fund-print header{height:15mm;margin-bottom:1.5mm;padding-top:1mm}
+.fund-print header h1{font-size:12px}.fund-print .brand{font-size:11px}.fund-print .logo-slot{font-size:7px}
+.fund-print .meta{margin-bottom:1.5mm;font-size:8px}
+.fund-print .data-table{font-size:6.7px;line-height:1.1}
+.fund-print .data-table th{height:4.1mm;font-size:6.8px;padding:.4mm .65mm}
+.fund-print .data-table tbody tr,.fund-print .data-table tbody td{height:3.2mm;max-height:3.2mm}
+.fund-print .data-table td{padding:.25mm .65mm}
+.fund-print .data-table .clip{line-height:2.3mm}
+/* More legible expense rows on shorter requests; density only increases when required. */
+.fund-print[data-density="roomy"] .data-table{font-size:8.5px}
+.fund-print[data-density="roomy"] .data-table th{height:5.4mm;font-size:8px}
+.fund-print[data-density="roomy"] .data-table tbody tr,.fund-print[data-density="roomy"] .data-table tbody td{height:4.4mm;max-height:4.4mm}
+.fund-print[data-density="mid"] .data-table{font-size:7.5px}
+.fund-print[data-density="mid"] .data-table th{height:4.5mm;font-size:7.5px}
+.fund-print[data-density="mid"] .data-table tbody tr,.fund-print[data-density="mid"] .data-table tbody td{height:3.7mm;max-height:3.7mm}
+
+.fund-print .footline{margin-top:.8mm;font-size:7px}
+.fund-summary{margin-top:2mm;break-inside:avoid;page-break-inside:avoid;font-size:8px}
+.fund-summary .fund-summary-title{border-bottom:1px solid #c5c8d0;padding-bottom:.8mm;margin-bottom:1mm;font-size:9px;font-weight:800}
+.fund-figures{display:grid;grid-template-columns:repeat(5,1fr);gap:1.8mm}
+.fund-figures>div{border:1px solid #d2d6dc;border-radius:2px;padding:1.2mm 1.5mm;min-height:9mm}
+.fund-figures>div span{display:block;color:#58616c;font-size:7px;white-space:nowrap}
+.fund-figures>div strong{font-size:10px;margin-top:1mm;display:block;font-weight:700;white-space:nowrap}
+.fund-request-result{background:#fff0a5;border:1px solid #d9ad0a;display:flex;align-items:center;justify-content:space-between;padding:1.4mm 2mm;margin:1mm 0;font-size:9px}
+.fund-request-result strong{font-size:13px}
+.fund-summary small{font-size:7px;color:#59616b}
+.fund-extra{display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-top:1.2mm}
+.fund-extra h3{font-size:8px;margin:0 0 .7mm}
+.fund-categories{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7mm 1.8mm;font-size:7px}
+.fund-category{display:flex;justify-content:space-between;gap:2mm;border-bottom:1px dotted #d9dce0;min-width:0}
+.fund-category span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.fund-category b{white-space:nowrap}
+.fund-deposits{width:100%;font-size:7px}
+.fund-deposits td,.fund-deposits th{padding:.35mm .7mm;height:3.3mm}
+.fund-summary .signature-grid{margin-top:4mm;gap:6mm}
+.fund-summary .signature{min-height:11mm;padding-top:1mm}
+.fund-summary .signature .name{font-size:9px}.fund-summary .signature .role{font-size:7px}
+.fund-summary .signature img{max-height:7mm;margin-top:-11mm}
+.branch-breakdown{margin-top:1.5mm;font-size:7.2px}
+.branch-breakdown table{font-size:7px}
+.branch-breakdown th,.branch-breakdown td{height:3.2mm;padding:.45mm 1mm}
+.branch-breakdown .grand{font-weight:800;background:#fff2b5}
+.approval-track{display:grid;grid-template-columns:repeat(3,1fr);gap:2.5mm;margin-top:2.6mm}
+.approval-track .approval-actor{border-top:1px solid #444;text-align:center;padding:1mm 1mm 0;font-size:8px;min-height:12mm;position:relative}
+.approval-track .approval-actor strong{display:block;font-size:9px}
+.approval-track .approval-actor span{display:block;font-size:7px;color:#525965}
+.approval-track .approval-actor img{height:6mm;max-width:56mm;object-fit:contain;display:block;margin:-7mm auto 1mm}
+@media print{.branch-breakdown,.approval-track{break-inside:avoid;page-break-inside:avoid}}
+.fund-summary .voucher-series{margin-top:1mm;line-height:1.4;max-height:4.2mm}
+.actions{position:fixed;bottom:15px;right:15px;z-index:999;padding:9px;border-radius:8px;background:white;border:1px solid #cbd1d8;box-shadow:0 4px 14px #0002}.actions button{background:#facc15;border:none;padding:11px 18px;border-radius:6px;font-weight:700;cursor:pointer}
+@media print{.actions{display:none!important}.print-page{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body><div class="actions"><button onclick="window.print()">Print / Save as PDF</button></div><section class="print-page"><header><div><div class="brand">UNDERCHARGERS CORPORATION</div><div class="logo-slot">FUND MANAGEMENT SYSTEM · OFFICIAL REPORT</div></div><div style="text-align:right"><h1>CLOSED SALES SUMMARY</h1><small>Oct 01, 2026 – Oct 31, 2026 · Detail page 1 / 1</small></div></header><div class="meta"><span><b>Branch:</b> UC Mandaluyong</span><span><b>Period:</b> Oct 01, 2026 – Oct 31, 2026</span></div><table class="data-table"><colgroup><col style="width:10%"/><col style="width:19%"/><col style="width:14%"/><col style="width:11%"/><col style="width:10%"/><col style="width:9%"/><col style="width:9%"/><col style="width:9%"/><col style="width:9%"/></colgroup><thead><tr><th>Closed Date</th><th>POS No.</th><th>Customer</th><th>Vehicle</th><th>Plate</th><th>Gross Sales</th><th>Payments</th><th>COGS</th><th>Gross Profit</th></tr></thead><tbody><tr><td><span class="clip" title="2026-10-03">2026-10-03</span></td><td><span class="clip" title="UCM-POS-00000001">UCM-POS-00000001</span></td><td><span class="clip" title="Sample Customer">Sample Customer</span></td><td><span class="clip" title="Toyota Vios 2020">Toyota Vios 2020</span></td><td><span class="clip" title="ABC1234">ABC1234</span></td><td><span class="clip" title="₱4,000.00">₱4,000.00</span></td><td><span class="clip" title="₱4,000.00">₱4,000.00</span></td><td><span class="clip" title="₱1,700.00">₱1,700.00</span></td><td><span class="clip" title="₱2,300.00">₱2,300.00</span></td></tr></tbody></table><div class="footline"><span>1 transactions on this page · Max 30 / page</span><span>Total detail rows: 1</span></div></section><section class="print-page"><header><div><div class="brand">UNDERCHARGERS CORPORATION</div><div class="logo-slot">FUND MANAGEMENT SYSTEM · OFFICIAL REPORT</div></div><div style="text-align:right"><h1>CLOSED SALES · SUMMARY</h1><small>Oct 01, 2026 – Oct 31, 2026</small></div></header><div class="meta"><span><b>Branch:</b> UC Mandaluyong</span><span><b>Period:</b> Oct 01, 2026 – Oct 31, 2026</span></div><div class="metrics"><div class="metric">Gross Sales<b>₱4,000.00</b></div><div class="metric">Payments<b>₱4,000.00</b></div><div class="metric">COGS (POS + RFP Linked)<b>₱1,700.00</b></div><div class="metric">Gross Profit<b>₱2,300.00</b></div></div><div class="notice">Only CLOSED POS transactions whose actual closure date falls in this period appear here. RFP-linked parts replace matching manually encoded part costs to avoid double counting.</div><div class="signature-grid"><div class="signature"><span class="name">Cashier — Mandaluyong</span><span class="role">Prepared by</span></div><div class="signature"><span class="name">Not configured</span><span class="role">Checked / Verified by</span></div><div class="signature"><span class="name">Not configured</span><span class="role">Approved by</span></div></div></section></body></html>

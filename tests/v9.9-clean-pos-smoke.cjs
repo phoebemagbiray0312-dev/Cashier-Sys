@@ -1,0 +1,50 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');const os=require('node:os');const path=require('node:path');
+const {spawnSync}=require('node:child_process');
+const root=path.resolve(__dirname,'..'),out=fs.mkdtempSync(path.join(os.tmpdir(),'cashier-v99-'));
+try{
+ const done=spawnSync('tsc',['--strict','--target','es2020','--module','commonjs','--lib','es2020,dom','--skipLibCheck','lib/data.ts','--outDir',out],{cwd:root,encoding:'utf8'});
+ assert.equal(done.status,0,`${done.stdout}\n${done.stderr}`);
+ const d=require(path.join(out,'data.js'));
+ const blank=d.createSeed();
+ for(const name of ['pos','fundEntries','inventory','stockMovements','terminalEvents','terminalSettlements','counts','incidents','turnovers','audit','stockReceipts'])assert.equal(blank[name].length,0,name+' should have zero seeded records');
+ assert.equal(blank.settings.rfBase.UCM,0,'No invented revolving fund balance');
+ assert.equal(blank.settings.rfpBase.UCM,0,'No invented parts fund balance');
+ assert.equal(blank.users.length,0,'Fresh installations must not contain default login accounts');
+ const old=require('./legacy-fixture.cjs')(d);
+ const migrated=d.removeLegacySeedFixtures(old);
+ assert.equal(migrated.pos.length,0,'Exact sample sale removed');
+ assert.equal(migrated.fundEntries.length,0,'Exact sample expenses removed');
+ assert.equal(migrated.audit.length,0,'Seed-only audit removed');
+ assert.equal(migrated.settings.rfBase.UCM,0,'Untouched demo-only opening RF settings reset');
+ assert.equal(migrated.settings.rfpBase.UCM,0,'Untouched demo-only opening RFP settings reset');
+ const realPOS={...old.pos[0],id:'real',no:'UCM-POS-00000002',client:'Genuine Customer'};
+ const realFund={...old.fundEntries[0],id:'real-fund',no:'UCM-RF-00000002',payee:'Real Business'};
+ const withReal={...old,pos:[...old.pos,realPOS],fundEntries:[...old.fundEntries,realFund],audit:[...old.audit,{id:'real-log',by:'u-admin',action:'User action',detail:'Real record',at:'2026-10-19T00:00:00Z'}]};
+ const cleaned=d.removeLegacySeedFixtures(withReal);
+ assert.equal(cleaned.pos.length,1,'Real sale preserved');
+ assert.equal(cleaned.pos[0].id,realPOS.id);
+ assert.equal(cleaned.fundEntries.length,1,'Real expense preserved');
+ assert.equal(cleaned.audit.length,2,'Real audit preserved and cleanup logged');
+ assert.equal(cleaned.audit[1].id,'real-log','Original business audit remains intact');
+ assert.equal(cleaned.settings.rfBase.UCM,50000,'Potentially real fund configuration preserved when real records exist');
+ // Never erase a demonstration fixture that subsequently acquired an actual external reference.
+ const referenced=d.removeLegacySeedFixtures({...old,stockMovements:[{id:'movement',kind:'StockOut',posId:old.pos[0].id}]});
+ assert.equal(referenced.pos.length,1,'Referenced POS must stay for stock/COGS traceability');
+ const linked=d.removeLegacySeedFixtures({...old,fundEntries:[{...old.fundEntries[0],linkedPosId:'legit-new-pos'}]});
+ assert.equal(linked.fundEntries.length,1,'Linked fund expense must not be deleted');
+ // loadDB reads and migrates old localStorage without changing its underlying storage key
+ const source=fs.readFileSync(path.join(root,'lib/data.ts'),'utf8');
+ assert(source.includes('const cleaned=removeLegacySeedFixtures(removeUntouchedDemoProducts(d))')&&source.includes('return removeEmptyDemoAccounts(cleaned,hasFiles)'));
+ const app=fs.readFileSync(path.join(root,'app/page.tsx'),'utf8');
+ const ts=require('typescript');
+ const parsed=ts.createSourceFile('app/page.tsx',app,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
+ assert.equal(parsed.parseDiagnostics.length,0,'POS JSX must remain valid');
+ assert(app.includes('1 · Vehicle')&&app.includes('2 · Quotation')&&app.includes('3 · COGS Review')&&app.includes('4 · Payment'));
+ assert(app.includes('costReviewIssues(lines)')&&app.includes('quotationIssue(quotationRows'),'COGS verification and quotation grid validation'); 
+ assert(app.includes('Confirm COGS & Continue to Payment')&&app.includes('Pay remaining'));
+ assert(app.includes("wizardLine.type==='Part'&&db.inventory.some"),'Registered parts cannot bypass controlled stock release');
+ assert(app.includes('Internal costing and Parts Buyer breakdown (optional)'));
+ assert(app.includes('Terminal / Device ID')&&app.includes('Close POS'));
+ console.log('PASS v9.9: fresh records empty, only exact legacy fixtures migrated, real records retained, protected POS references, quotation/COGS/payment UI and stock/terminal safeguards');
+}finally{fs.rmSync(out,{recursive:true,force:true});}
