@@ -4,7 +4,7 @@ import Link from 'next/link';
 import {BRANCHES,loadDB,type BranchId,type Role} from '@/lib/data';
 type Supplier={id:string;name:string;phone:string;branch:BranchId;status:'For Review'|'Verified'|'Flagged';by:string;at:string};
 type Store={suppliers:Supplier[];units:unknown[];items:unknown[];requests:unknown[];audit:{id:string;at:string;by:string;detail:string}[]};
-const KEY='uc-supplier-controls-v1';
+const KEY='uc-supplier-unit-controls-pilot-v1';
 const initialSuppliers:[string,string][]=[['TOYOSCO','09778490850 / 09298780461'],['THUNDER','09255986464 / 09228133077'],['RJC AUTO PARTS','09778014246'],['KJL AUTO PARTS','09178988863'],['EURO AUTO PARTS','09228227727'],['FAST DELIVERY','09165629827'],['ECSF','09166879608'],['BENZLAND','09174130169'],['HONDA CARS QC','09189929364'],['JC EMERALD','09190641869'],['BANAWE CENTER','09362529700'],['JANICE AUTO SUPPLY','09270057862'],['JZVC BANAWE','09562984945']];
 export default function SupplierControls(){
  const [store,setStore]=useState<Store>({suppliers:[],units:[],items:[],requests:[],audit:[]});
