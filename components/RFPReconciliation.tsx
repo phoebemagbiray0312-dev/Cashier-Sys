@@ -1,0 +1,25 @@
+'use client';
+import React,{useEffect,useState} from 'react';
+type Purchase={id:string;no:string;fund:string;kind:string;branch:string;payee:string;amount:number;status:string};
+type Entry={id:string;purchaseId:string;type:'receipt'|'refund';amount:number;reference:string;proof?:string;status:'Pending'|'Matched'|'Discrepancy'|'Received';by:string;at:string};
+const KEY='uc-rfp-reconciliation-v1';
+export default function RFPReconciliation({purchases,role,branch,user}:{purchases:Purchase[];role:string;branch:string;user:string}){
+ const [records,setRecords]=useState<Entry[]>([]),[purchaseId,setPurchaseId]=useState(''),[amount,setAmount]=useState(''),[reference,setReference]=useState(''),[proof,setProof]=useState(''),[message,setMessage]=useState('');
+ const type=role==='pb'?'refund':'receipt';
+ useEffect(()=>{try{setRecords(JSON.parse(localStorage.getItem(KEY)||'[]'))}catch{setRecords([])}},[]);
+ const items=purchases.filter(p=>p.fund==='RFP'&&p.kind==='expense'&&p.branch===branch&&p.status!=='Rejected');
+ const chosen=items.find(p=>p.id===purchaseId);
+ function saveRecords(next:Entry[]){try{localStorage.setItem(KEY,JSON.stringify(next));setRecords(next);setMessage('Saved.')}catch{setMessage('Unable to save to local browser storage.')}}
+ function save(){const n=Number(amount);if(!chosen||!Number.isFinite(n)||n<=0){setMessage('Choose a purchase and enter a valid amount.');return}if(type==='refund'&&n+records.filter(x=>x.purchaseId===chosen.id&&x.type==='refund'&&x.status!=='Discrepancy').reduce((a,x)=>a+x.amount,0)>chosen.amount){setMessage('Total refunds cannot exceed original purchase.');return}if(type==='receipt'&&!proof){setMessage('Attach supplier receipt first.');return}saveRecords([{id:crypto.randomUUID(),purchaseId:chosen.id,type,amount:n,reference,proof,status:'Pending',by:user,at:new Date().toISOString()},...records]);setAmount('');setReference('');setProof('')}
+ function attach(file?:File){if(!file)return;if(file.size>1000000){setMessage('File must be below 1 MB in local demo.');return}const reader=new FileReader();reader.onload=()=>setProof(String(reader.result||''));reader.readAsDataURL(file)}
+ return <section className="panel" style={{padding:20,marginTop:18}}><h3>RFP Purchase Reconciliation & Refunds</h3><p className="muted">Uses the existing RFP transaction number as the purchase reference. No duplicate fund deduction or refund credit.</p>
+ <div style={{display:'flex',flexWrap:'wrap',gap:10,margin:'14px 0'}}>
+ <select aria-label="Purchase reference" value={purchaseId} onChange={e=>setPurchaseId(e.target.value)}><option value="">Select RFP purchase / PO reference</option>{items.map(p=><option key={p.id} value={p.id}>{p.no} · {p.payee} · ₱{p.amount.toFixed(2)}</option>)}</select>
+ <input aria-label="Amount" type="number" min=".01" step=".01" placeholder="Amount (₱)" value={amount} onChange={e=>setAmount(e.target.value)}/>
+ <input aria-label="Receipt or refund reference" placeholder="Receipt / refund reference" value={reference} onChange={e=>setReference(e.target.value)}/>
+ <label>Proof (image/PDF)<input type="file" accept="image/*,application/pdf" onChange={e=>attach(e.target.files?.[0])}/></label>
+ <button className="button button-primary" type="button" onClick={save}>{type==='refund'?'Report Refund':'Attach Supplier Receipt'}</button></div>
+ {message&&<p role="status">{message}</p>}
+ <div style={{overflowX:'auto'}}><table style={{width:'100%'}}><thead><tr><th>RFP / PO Ref</th><th>Type</th><th>Amount</th><th>Reference</th><th>Proof</th><th>Status</th><th>Review</th></tr></thead><tbody>{records.filter(x=>items.some(p=>p.id===x.purchaseId)).map(x=><tr key={x.id}><td>{items.find(p=>p.id===x.purchaseId)?.no}</td><td>{x.type}</td><td>₱{x.amount.toFixed(2)}</td><td>{x.reference||'—'}</td><td>{x.proof?<a href={x.proof} target="_blank" rel="noreferrer">View</a>:'—'}</td><td>{x.status}</td><td>{role!=='pb'&&x.status==='Pending'?<><button type="button" onClick={()=>saveRecords(records.map(y=>y.id===x.id?{...y,status:x.type==='refund'?'Received':'Matched'}:y))}>{x.type==='refund'?'Confirm receipt':'Mark matched'}</button><button type="button" onClick={()=>saveRecords(records.map(y=>y.id===x.id?{...y,status:'Discrepancy'}:y))}>Flag</button></>:'—'}</td></tr>)}</tbody></table></div>
+ <p className="muted">Manual review required: status is not automatic proof of authenticity. Refunds are tracked separately and not yet posted back into RFP balance.</p></section>
+}
