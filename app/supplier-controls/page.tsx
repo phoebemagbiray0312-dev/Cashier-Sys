@@ -1,12 +1,14 @@
 'use client';
 import React,{useEffect,useState} from 'react';
 import Link from 'next/link';
+import {useSearchParams} from 'next/navigation';
 import {BRANCHES,loadDB,type BranchId,type Role} from '@/lib/data';
 type Supplier={id:string;name:string;phone:string;branch:BranchId;status:'For Review'|'Verified'|'Flagged';by:string;at:string};
 type Store={suppliers:Supplier[];units:unknown[];items:unknown[];requests:unknown[];audit:{id:string;at:string;by:string;detail:string}[]};
 const KEY='uc-supplier-unit-controls-pilot-v1';
 const initialSuppliers:[string,string][]=[['TOYOSCO','09778490850 / 09298780461'],['THUNDER','09255986464 / 09228133077'],['RJC AUTO PARTS','09778014246'],['KJL AUTO PARTS','09178988863'],['EURO AUTO PARTS','09228227727'],['FAST DELIVERY','09165629827'],['ECSF','09166879608'],['BENZLAND','09174130169'],['HONDA CARS QC','09189929364'],['JC EMERALD','09190641869'],['BANAWE CENTER','09362529700'],['JANICE AUTO SUPPLY','09270057862'],['JZVC BANAWE','09562984945']];
 export default function SupplierControls(){
+ const embedded=useSearchParams().get('embedded')==='1';
  const [store,setStore]=useState<Store>({suppliers:[],units:[],items:[],requests:[],audit:[]});
  const [ready,setReady]=useState(false),[error,setError]=useState('');
  const [role,setRole]=useState<Role>('cashier'),[userId,setUserId]=useState(''),[userName,setUserName]=useState(''),[assigned,setAssigned]=useState<BranchId>('UCM');
@@ -18,7 +20,7 @@ export default function SupplierControls(){
  const visible=store.suppliers.filter(s=>(role==='admin'||s.branch===assigned)&&s.branch===branch&&[s.name,s.phone,s.status].join(' ').toLowerCase().includes(search.toLowerCase()));
  if(!ready)return <main style={{padding:32}}>Loading suppliers…</main>;
  return <main style={{maxWidth:1120,margin:'0 auto',padding:'24px 20px',fontFamily:'inherit'}}>
-  <header style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap',marginBottom:24}}><div><small>UC Finance · Supplier Database</small><h1 style={{fontSize:27,fontWeight:750,margin:'5px 0'}}>Supplier Management</h1><p style={{color:'#64748b'}}>Supplier masterlist only. Parts purchases and RFP deductions must be recorded in Parts Fund (RFP).</p></div><Link href="/" style={{background:'#f3d777',color:'#1e293b',padding:'11px 17px',borderRadius:9,fontWeight:700,textDecoration:'none'}}>← Back to Dashboard</Link></header>
+  {!embedded&&<header style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap',marginBottom:24}}><div><small>UC Finance · Supplier Database</small><h1 style={{fontSize:27,fontWeight:750,margin:'5px 0'}}>Supplier Management</h1><p style={{color:'#64748b'}}>Supplier masterlist only. Parts purchases and RFP deductions must be recorded in Parts Fund (RFP).</p></div><Link href="/" style={{background:'#f3d777',color:'#1e293b',padding:'11px 17px',borderRadius:9,fontWeight:700,textDecoration:'none'}}>← Back to Dashboard</Link></header>}
   {!userId&&<p role="alert" style={{color:'#b91c1c'}}>Sign in to the main Dashboard first to access supplier actions.</p>}
   {error&&<p role="alert" style={{color:'#b91c1c'}}>{error}</p>}
   <section style={{display:'flex',gap:12,flexWrap:'wrap',marginBottom:18}}>
