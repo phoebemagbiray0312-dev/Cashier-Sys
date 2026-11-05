@@ -1,5 +1,5 @@
 'use client';
-import React,{useEffect,useState} from 'react';
+import React,{Suspense,useEffect,useState} from 'react';
 import Link from 'next/link';
 import {useSearchParams} from 'next/navigation';
 import {BRANCHES,loadDB,type BranchId,type Role} from '@/lib/data';
@@ -26,7 +26,8 @@ const demoCatalog:Record<string,string[]>={
  'JZVC BANAWE':['Oil filter (sample)','Air filter (sample)','Brake cleaner (sample)']
 };
 const initialSuppliers:[string,string][]=[['TOYOSCO','09778490850 / 09298780461'],['THUNDER','09255986464 / 09228133077'],['RJC AUTO PARTS','09778014246'],['KJL AUTO PARTS','09178988863'],['EURO AUTO PARTS','09228227727'],['FAST DELIVERY','09165629827'],['ECSF','09166879608'],['BENZLAND','09174130169'],['HONDA CARS QC','09189929364'],['JC EMERALD','09190641869'],['BANAWE CENTER','09362529700'],['JANICE AUTO SUPPLY','09270057862'],['JZVC BANAWE','09562984945']];
-export default function SupplierControls(){
+export default function SupplierControls(){return <Suspense fallback={<main style={{padding:32}}>Loading suppliers…</main>}><SupplierControlsContent/></Suspense>}
+function SupplierControlsContent(){
  const embedded=useSearchParams().get('embedded')==='1';
  const [store,setStore]=useState<Store>({suppliers:[],units:[],items:[],requests:[],audit:[]});
  const [ready,setReady]=useState(false),[error,setError]=useState('');
