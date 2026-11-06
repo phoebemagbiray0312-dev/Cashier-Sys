@@ -842,3 +842,33 @@
   .report-selected-detail > p:not(.panel-hint) {margin:0;padding:8px 0;border:0;background:transparent}
   .report-selected-detail > .report-detail-actions {display:none}
 }
+
+
+/* Dashboard readability refresh — preserves original UC and Mastermind artwork */
+.side-brand{padding:16px 14px 18px;min-height:166px;display:flex;align-items:center;justify-content:center}
+.side-brand img{width:100%;max-width:230px;height:136px;object-fit:contain;object-position:center}
+.side-caption{font-size:11px}
+.nav-link{font-size:13px;min-height:45px}
+.page-heading h1{font-size:clamp(27px,2.5vw,33px)}
+.page-heading p{font-size:13px}
+.stat-heading>span:first-child{font-size:13px}
+.stat-amount{font-size:clamp(23px,2vw,30px)}
+.stat-card small{font-size:12px}
+.task-text strong,.recent-info strong{font-size:13px}
+.task-text small,.recent-info small{font-size:12px}
+.task-tag{font-size:11px}
+.quick-action strong{font-size:13px}
+.quick-action small{font-size:11px}
+.branch-label,.breadcrumb{font-size:13px}
+@media(max-width:700px){
+ .side-brand{min-height:145px;padding:12px}
+ .side-brand img{height:118px}
+ .page-heading h1{font-size:25px}
+ .page-heading p{font-size:12px}
+ .stat-heading>span:first-child{font-size:11px}
+ .stat-amount{font-size:21px}
+ .stat-card small{font-size:10px}
+ .quick-action strong{font-size:11px}
+ .quick-action small{font-size:10px}
+ .branch-label{font-size:11px}
+}
