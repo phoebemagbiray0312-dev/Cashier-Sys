@@ -882,3 +882,20 @@
 .side-brand .brand-symbol-wrap{width:100%;height:100%;min-height:100px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .side-brand .brand-symbol-img{width:76px!important;height:76px!important;max-width:76px!important;object-fit:contain!important;transform:none!important;display:block}
 @media(max-width:700px){.side-brand .brand-symbol-img{width:60px!important;height:60px!important;max-width:60px!important}}
+
+
+/* Responsive brand: preserve the supplied full artwork on wide desktop;
+   use the cropped original symbol for narrow rail, phone and browser favicon. */
+.side-brand .brand-logo-responsive{width:100%;height:100%;display:flex;align-items:center;justify-content:center;min-width:0;overflow:hidden}
+.side-brand .brand-full-img{display:block;width:100%;height:165px;max-width:100%;object-fit:contain;transform:scale(1.6);transform-origin:center}
+.side-brand .brand-logo-responsive>.brand-symbol-wrap{display:none}
+@media screen and (max-width:1100px){
+ .side-brand .brand-full-img{display:none}
+ .side-brand .brand-logo-responsive>.brand-symbol-wrap{display:flex;width:100%;min-height:0;height:auto;align-items:center;justify-content:center}
+ .side-brand .brand-symbol-img{width:56px!important;height:56px!important;max-width:56px!important;transform:none!important;object-fit:contain!important}
+ .sidebar .side-brand{min-height:90px;padding:10px 6px}
+}
+@media screen and (max-width:699px){
+ .sidebar .side-brand{min-height:100px}
+ .side-brand .brand-symbol-img{width:64px!important;height:64px!important;max-width:64px!important}
+}
