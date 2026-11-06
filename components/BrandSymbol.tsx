@@ -29,5 +29,5 @@ export default function BrandSymbol({mastermind=false}:{mastermind?:boolean}){
   img.src=source;
   return()=>{cancelled=true;};
  },[mastermind]);
- return <div className="brand-symbol-wrap"><img className="brand-symbol-img" src={symbol|| (mastermind?'/MND.png':'/UC.png')} alt={mastermind?'Mastermind logo':'Underchargers logo'}/></div>;
+ return <div className="brand-logo-responsive"><img className="brand-full-img" src={mastermind?'/MND.png':'/UC.png'} alt={mastermind?'Mastermind Autoworks full logo':'Underchargers full logo with tagline'}/><span className="brand-symbol-wrap"><img className="brand-symbol-img" src={symbol||(mastermind?'/MND.png':'/UC.png')} alt={mastermind?'Mastermind symbol':'Underchargers symbol'}/></span></div>;
 }
