@@ -899,3 +899,24 @@
  .sidebar .side-brand{min-height:100px}
  .side-brand .brand-symbol-img{width:64px!important;height:64px!important;max-width:64px!important}
 }
+
+/* Cashier sidebar refinement: compact branding and grouped account actions. */
+.sidebar .sidebar-bottom{padding:10px 12px 14px}
+.sidebar .side-profile{border:1px solid var(--line);border-radius:12px;padding:10px;gap:10px;background:#fafbfc}
+.sidebar .side-profile .icon-button{flex:0 0 34px;border:1px solid #e6e8ec;background:#fff}
+.sidebar .side-profile .icon-button:hover{background:#fff1ed;color:#a9342c}
+.sidebar .side-nav{min-height:0}
+@media(min-width:961px) and (max-width:1100px){
+ .sidebar .side-brand{height:94px;min-height:94px;padding:8px}
+ .sidebar .side-brand .brand-logo-responsive{height:76px}
+ .sidebar .side-caption{padding-top:12px}
+ .sidebar .sidebar-help{display:none}
+ .sidebar .sidebar-bottom{padding:10px}
+ .sidebar .side-profile{padding:8px;gap:8px}
+}
+@media(max-width:960px){
+ .sidebar .side-brand{min-height:92px;height:92px;padding:8px}
+ .sidebar .side-brand .brand-logo-responsive{height:76px}
+ .sidebar .side-caption{padding-top:12px}
+ .sidebar .sidebar-help{display:none}
+}
