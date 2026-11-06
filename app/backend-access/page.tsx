@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { listSuppliers, createSupplier, type SupplierRecord } from '../../lib/backend/suppliers';
 import { getAuthorizedStaff, signInStaff, signOutStaff, type StaffProfile } from '../../lib/backend/supabase-auth';
 
 export default function BackendAccess() {
@@ -9,6 +10,23 @@ export default function BackendAccess() {
   const [profile, setProfile] = useState<StaffProfile | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [branch, setBranch] = useState<'UCM'|'UCQC'|'UCLP'|'MMM'>('UCM');
+  const [suppliers, setSuppliers] = useState<SupplierRecord[]>([]);
+  const [supplierName, setSupplierName] = useState('');
+  const [supplierContact, setSupplierContact] = useState('');
+  const [supplierMessage, setSupplierMessage] = useState('');
+  async function refreshSuppliers() {
+    setBusy(true); setSupplierMessage('');
+    try { setSuppliers(await listSuppliers(token, branch)); }
+    catch(e) { setSupplierMessage(e instanceof Error ? e.message : 'Unable to load suppliers.'); }
+    finally { setBusy(false); }
+  }
+  async function addSupplier(e: React.FormEvent) {
+    e.preventDefault(); setBusy(true); setSupplierMessage('');
+    try { await createSupplier(token, branch, supplierName, supplierContact); setSupplierName(''); setSupplierContact(''); setSuppliers(await listSuppliers(token,branch)); setSupplierMessage('Supplier saved to Supabase.'); }
+    catch(e) { setSupplierMessage(e instanceof Error ? e.message : 'Unable to save supplier.'); }
+    finally { setBusy(false); }
+  }
   async function login(e: React.FormEvent) {
     e.preventDefault(); setBusy(true); setError('');
     try {
@@ -41,6 +59,14 @@ export default function BackendAccess() {
       <p><strong>Role:</strong> {profile.role}</p>
       <p><strong>Assigned branch:</strong> {profile.branch_id || 'All branches (admin)'}</p>
       <button disabled={busy} onClick={logout}>Sign out</button>
+      <hr style={{margin:'24px 0'}}/>
+      <h2>Supabase Suppliers — Controlled Test</h2>
+      <p>These are real database records. Use test supplier details only until approved for production.</p>
+      <label>Branch <select value={branch} onChange={e=>{setBranch(e.target.value as typeof branch);setSuppliers([]);setSupplierMessage('Click Load suppliers for the selected branch.');}}>{(['UCM','UCQC','UCLP','MMM'] as const).filter(b=>profile.role==='admin'||profile.branch_id===b).map(b=><option key={b} value={b}>{b}</option>)}</select></label>
+      <p><button disabled={busy} onClick={refreshSuppliers}>Load suppliers</button></p>
+      <ul>{suppliers.map(s=><li key={s.id}>{s.name} — {s.contact||'No contact'}</li>)}</ul>
+      {['admin','pb'].includes(profile.role)&&<form onSubmit={addSupplier} style={{display:'grid',gap:8}}><label>Supplier name <input required value={supplierName} onChange={e=>setSupplierName(e.target.value)}/></label><label>Contact <input value={supplierContact} onChange={e=>setSupplierContact(e.target.value)}/></label><button disabled={busy||!supplierName.trim()} type="submit">Save supplier to Supabase</button></form>}
+      {supplierMessage&&<p role="status">{supplierMessage}</p>}
     </section> : <form onSubmit={login} style={{display:'grid',gap:12}}>
       <label>Email <input type="email" required autoComplete="username" value={email} onChange={e=>setEmail(e.target.value)} style={{display:'block',width:'100%',padding:10}}/></label>
       <label>Password <input type="password" required autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} style={{display:'block',width:'100%',padding:10}}/></label>
