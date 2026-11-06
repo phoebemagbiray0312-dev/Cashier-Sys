@@ -59,6 +59,11 @@ function SupplierControlsContent(){
  if(!ready)return <main style={{padding:32}}>Loading suppliers…</main>;
  return <main style={{maxWidth:1120,margin:'0 auto',padding:'24px 20px',fontFamily:'inherit'}}>
   {!embedded&&<header style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap',marginBottom:24}}><div><small>UC Finance · Supplier Database</small><h1 style={{fontSize:27,fontWeight:750,margin:'5px 0'}}>Supplier Management</h1><p style={{color:'#64748b'}}>Shared supplier masterlist for UCM, UCQC, UCLP and Mastermind. Parts purchases and RFP deductions must be recorded in Parts Fund (RFP).</p></div><Link href="/" style={{background:'#f3d777',color:'#1e293b',padding:'11px 17px',borderRadius:9,fontWeight:700,textDecoration:'none'}}>← Back to Dashboard</Link></header>}
+  <section style={{border:'1px solid #e8d18a',background:'#fff9e6',borderRadius:12,padding:'14px 18px',marginBottom:18}}>
+    <strong>Live Supabase Supplier Records</strong>
+    <p style={{margin:'6px 0 12px',fontSize:13}}>The supplier catalog below still uses browser-local storage. For shared, database-backed supplier records, use the secure staff workspace. These two lists are not synchronized yet; do not enter production suppliers in the local catalog.</p>
+    <Link href="/backend-access" style={{display:'inline-block',background:'#eabf36',color:'#1f2937',padding:'9px 14px',borderRadius:8,fontWeight:700,textDecoration:'none'}}>Open Live Supplier Database</Link>
+  </section>
   {!userId&&<p role="alert" style={{color:'#b91c1c'}}>Sign in to the main Dashboard first to access supplier actions.</p>}
   {error&&<p role="alert" style={{color:'#b91c1c'}}>{error}</p>}
   {!chosen&&<>
