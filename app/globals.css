@@ -928,3 +928,11 @@
  .login-panel .login-brand{height:108px;min-height:108px;margin-bottom:25px}
  .login-panel .login-company-logo{width:265px;height:265px;transform:translateX(-38px)}
 }
+
+/* Login layout: keep the original artwork prominent but close to the form. */
+.login-panel .login-brand{height:90px;min-height:90px;margin-bottom:8px;overflow:hidden}
+.login-panel .login-company-logo{width:260px;height:260px;transform:translateX(-38px)}
+@media(max-width:700px){
+ .login-panel .login-brand{height:82px;min-height:82px;margin-bottom:10px}
+ .login-panel .login-company-logo{width:235px;height:235px;transform:translateX(-34px)}
+}
