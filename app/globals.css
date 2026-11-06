@@ -936,3 +936,11 @@
  .login-panel .login-brand{height:82px;min-height:82px;margin-bottom:10px}
  .login-panel .login-company-logo{width:235px;height:235px;transform:translateX(-34px)}
 }
+
+/* Center login artwork above the form without changing its visible size. */
+.login-panel .login-brand{justify-content:center}
+.login-panel .login-company-logo{transform:none}
+@media(max-width:700px){
+ .login-panel .login-brand{justify-content:center}
+ .login-panel .login-company-logo{transform:none}
+}
