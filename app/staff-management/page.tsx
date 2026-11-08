@@ -38,8 +38,8 @@ export default function StaffManagement({embedded=false}:{embedded?:boolean}){
  <label>Username<input style={field} required pattern="[a-z][a-z0-9._-]{2,31}" placeholder="e.g. cashier_ucm" value={username} onChange={e=>setUsername(e.target.value.toLowerCase())}/></label>
  <label>Email<input style={field} required type="email" value={email} onChange={e=>setEmail(e.target.value)}/></label>
  <label>Temporary password (12+ characters)<input style={field} required minLength={12} type="password" autoComplete="new-password" value={password} onChange={e=>setPassword(e.target.value)}/></label>
- <label>Role<select style={field} value={role} onChange={e=>setRole(e.target.value)}><option value="cashier">Cashier</option><option value="pb">Parts Buyer</option></select></label>
- <label>Assigned branch<select style={field} value={branch} onChange={e=>setBranch(e.target.value)}>{branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
+ <label>Role<select style={field} value={role} onChange={e=>{setRole(e.target.value);if(e.target.value==='cashier'&&branch==='ALL')setBranch('UCM');}}><option value="cashier">Cashier</option><option value="pb">Parts Buyer</option></select></label>
+ <label>Assigned branch<select style={field} value={branch} onChange={e=>setBranch(e.target.value)}>{role==='pb'&&<option value="ALL">All Branches</option>}{branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
  <div style={{gridColumn:'1 / -1'}}><button disabled={busy} type="submit" style={{padding:'12px 20px',background:'#e6ba38',border:0,borderRadius:8,fontWeight:700,cursor:'pointer'}}>{busy?'Creating...':'Create Staff Account'}</button></div>
  </form>
  {message&&<p role="status">{message}</p>}
