@@ -28,7 +28,7 @@ export default function OnlineInventoryPage(){
   setProducts(p);setHistory(h);setPage(1);
   setProductId(old=>p.some(x=>x.id===old)?old:(p[0]?.id??''));
  }
- useEffect(()=>{setEmbedded(new URLSearchParams(window.location.search).get('embedded')==='1');},[]);
+ useEffect(()=>{const isEmbedded=new URLSearchParams(window.location.search).get('embedded')==='1';setEmbedded(isEmbedded);if(!isEmbedded)window.location.replace('/?view=inventory');},[]);
  useEffect(()=>{
   let mounted=true;
   getCurrentStaff().then(async identity=>{
