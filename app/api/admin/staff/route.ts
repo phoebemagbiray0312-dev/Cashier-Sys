@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
  const branch=body.branch;
  if(!/^[a-z][a-z0-9._-]{2,31}$/.test(username)||displayName.length<2||displayName.length>100||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||
-    password.length<12||password.length>128||!['cashier','pb'].includes(String(role))||!branches.includes(String(branch)))
+    password.length<12||password.length>128||!['cashier','pb'].includes(String(role))||!(branches.includes(String(branch))||(role==='pb'&&branch==='ALL')))
    return fail('Enter a valid username, email, name, role, branch and a password of at least 12 characters.',400);
  const {data:existing,error:lookupError}=await ctx.admin.from('cms_profiles').select('user_id').eq('username',username).maybeSingle();
  if(lookupError)return fail('Unable to verify username.',500);
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
  });
  if(createError||!created.user)return fail('Could not create account. Check whether the email is already in use.',409);
  const {error:profileError}=await ctx.admin.from('cms_profiles').insert({
-  user_id:created.user.id,username,display_name:displayName,role,branch_id:branch,active:true
+  user_id:created.user.id,username,display_name:displayName,role,branch_id:branch==='ALL'?null:branch,active:true
  });
  if(profileError){
   await ctx.admin.auth.admin.deleteUser(created.user.id);
