@@ -24,6 +24,7 @@ export default function StaffLoginTestPage() {
       const identity = await signInStaff(email, password);
       setStaff(identity);
       setPassword('');
+      if (new URLSearchParams(window.location.search).get('next') === '/online-inventory') window.location.replace('/online-inventory');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Sign-in failed.');
     } finally { setBusy(false); }
@@ -38,7 +39,7 @@ export default function StaffLoginTestPage() {
     <h1>Staff authentication test</h1>
     <p>This verifies Supabase Auth and active staff assignment only. The Cashier System is not yet connected to Supabase transactions.</p>
     {staff ? <section><p>Authenticated: {staff.displayName}</p><p>Role: {staff.role}</p><p>Branch: {staff.branch ?? 'All branches (admin)'}</p>
-      <button disabled={busy} onClick={logout}>Sign out</button></section> :
+      <p><a href="/online-inventory">Open Online Inventory →</a></p><button disabled={busy} onClick={logout}>Sign out</button></section> :
       <form onSubmit={submit} style={{display:'grid',gap:12}}>
         <label>Email<input style={{display:'block',width:'100%',padding:8}} type="email" required autoComplete="username" value={email} onChange={e=>setEmail(e.target.value)}/></label>
         <label>Password<input style={{display:'block',width:'100%',padding:8}} type="password" required autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)}/></label>
