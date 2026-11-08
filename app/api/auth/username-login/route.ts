@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -28,6 +29,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: genericError }, { status: 401, headers: { 'Cache-Control': 'no-store' } });
   }
   const admin = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
+  const clientIp = request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  const hash = (value: string) => createHash('sha256').update(secret + ':' + value).digest('hex');
+  const { data: allowed, error: rateError } = await admin.rpc('cms_register_login_attempt', { p_ip_hash: hash(clientIp), p_username_hash: hash(username) });
+  if (rateError || allowed !== true) return NextResponse.json({ error: 'Too many login attempts. Please try again later.' }, { status: 429, headers: { 'Cache-Control': 'no-store', 'Retry-After': '900' } });
   const { data: profile, error: profileError } = await admin.from('cms_profiles')
     .select('user_id,active').eq('username', username).maybeSingle();
   if (profileError || !profile?.active) {
