@@ -1,6 +1,6 @@
 'use client';
 import BrandSymbol from '../components/BrandSymbol';
-import StaffManagement from './staff-management/page';
+import StaffManagement from '@/components/StaffManagement';
 import {getCurrentStaff,signInStaffByUsername,signOutStaff,type StaffIdentity} from '@/lib/supabase-auth';
 import React,{useEffect,useMemo,useState} from 'react';
 import {Activity,AlertCircle,ArrowDownLeft,ArrowLeft,ArrowRight,ArrowUpRight,BadgeCheck,Banknote,BarChart3,Bell,CalendarClock,Check,CheckCircle2,ChevronDown,ChevronRight,ClipboardCheck,Clock,CloudOff,Download,FileBarChart,FilePenLine,FileSpreadsheet,FileText,Filter,History,LayoutDashboard,Lock,LogOut,Menu,MoreHorizontal,Package,Plus,Printer,RefreshCw,Search,Settings,Shield,ShieldCheck,ShoppingBag,ShoppingCart,ScanBarcode,Camera,Smartphone,Trash2,TrendingUp,Upload,Users,Wallet,WalletCards,X} from 'lucide-react';
