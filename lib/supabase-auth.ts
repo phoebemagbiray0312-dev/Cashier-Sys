@@ -54,3 +54,26 @@ export async function signOutStaff(): Promise<void> {
   const { error } = await getSupabaseClient().auth.signOut();
   if (error) throw new Error('Could not sign out. Please try again.');
 }
+
+/** Username/password staff sign-in through the server-only resolver. */
+export async function signInStaffByUsername(username: string, password: string): Promise<StaffIdentity> {
+  const response = await fetch('/api/auth/username-login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }), cache: 'no-store',
+  });
+  const payload = await response.json() as { access_token?: string; refresh_token?: string; error?: string };
+  if (!response.ok || !payload.access_token || !payload.refresh_token) {
+    throw new Error(payload.error || 'Invalid username/password or inactive account.');
+  }
+  const supabase = getSupabaseClient();
+  const { error } = await supabase.auth.setSession({
+    access_token: payload.access_token, refresh_token: payload.refresh_token,
+  });
+  if (error) throw new Error('Could not establish your staff session.');
+  const staff = await getCurrentStaff();
+  if (!staff) {
+    await supabase.auth.signOut();
+    throw new Error('No active staff profile is assigned to this account.');
+  }
+  return staff;
+}
