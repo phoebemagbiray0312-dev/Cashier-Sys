@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
-import { getCurrentStaff, signInStaff, signOutStaff, type StaffIdentity } from '@/lib/supabase-auth';
+import { getCurrentStaff, signInStaffByUsername, signOutStaff, type StaffIdentity } from '@/lib/supabase-auth';
 
 /** Staging-only authentication smoke test. Does not grant access to the local prototype. */
 export default function StaffLoginTestPage() {
   const [staff, setStaff] = useState<StaffIdentity | null>(null);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -21,7 +21,7 @@ export default function StaffLoginTestPage() {
     setBusy(true);
     setMessage('');
     try {
-      const identity = await signInStaff(email, password);
+      const identity = await signInStaffByUsername(username, password);
       setStaff(identity);
       setPassword('');
       if (new URLSearchParams(window.location.search).get('next') === '/online-inventory') window.location.replace('/online-inventory');
@@ -36,12 +36,12 @@ export default function StaffLoginTestPage() {
     finally { setBusy(false); }
   }
   return <main style={{maxWidth:440,margin:'8vh auto',padding:24,fontFamily:'sans-serif'}}>
-    <h1>Staff authentication test</h1>
-    <p>This verifies Supabase Auth and active staff assignment only. The Cashier System is not yet connected to Supabase transactions.</p>
+    <h1>Staff account verification</h1>
+    <p>Use your provisioned Supabase staff username and password. This does not migrate browser-local Cashier records.</p>
     {staff ? <section><p>Authenticated: {staff.displayName}</p><p>Role: {staff.role}</p><p>Branch: {staff.branch ?? 'All branches (admin)'}</p>
       <p><a href="/online-inventory">Open Online Inventory →</a></p><button disabled={busy} onClick={logout}>Sign out</button></section> :
       <form onSubmit={submit} style={{display:'grid',gap:12}}>
-        <label>Email<input style={{display:'block',width:'100%',padding:8}} type="email" required autoComplete="username" value={email} onChange={e=>setEmail(e.target.value)}/></label>
+        <label>Username<input style={{display:'block',width:'100%',padding:8}} type="text" required autoComplete="username" value={username} onChange={e=>setUsername(e.target.value)}/></label>
         <label>Password<input style={{display:'block',width:'100%',padding:8}} type="password" required autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)}/></label>
         <button type="submit" disabled={busy}>{busy?'Checking...':'Verify staff login'}</button>
       </form>}
