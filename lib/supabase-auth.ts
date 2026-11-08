@@ -26,7 +26,7 @@ export async function getCurrentStaff(): Promise<StaffIdentity | null> {
     .select('user_id,display_name,role,branch_id,active')
     .eq('user_id', auth.user.id).maybeSingle();
   if (error || !data || !data.active || !validRole(data.role)) return null;
-  if (data.role !== 'admin' && !validBranch(data.branch_id)) return null;
+  if (data.role === 'cashier' && !validBranch(data.branch_id)) return null;
   if (data.branch_id !== null && !validBranch(data.branch_id)) return null;
   return {
     id: auth.user.id,
