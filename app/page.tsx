@@ -150,7 +150,7 @@ export default function Home(){
  }
  function notify(message:string){setToast(message)}
  function resetList(){setSearch('');setStockSearch('');setStatusFilter('All');setExpenseCategoryFilter('All')}
- function goto(v:View){if(v==='profitability'&&user?.role!=='admin'){notify('Profitability Analytics is restricted to Admin.');return;}if(v==='spreadsheets'||v==='documents'){window.location.assign(studioHomeHref(v==='spreadsheets'?'sheet':'document'));return;}setShowInventoryCamera(false);setShowProductCamera(false);setShowBarcodeCamera(false);if(bodGate&&v!=='cash'){setView('cash');setMenuOpen(false);setDialog('count');notify('Complete your Opening Cash Count first.');return;}setView(v);setMenuOpen(false);resetList()}
+ function goto(v:View){if(v==='profitability'&&user?.role!=='admin'){notify('Profitability Analytics is restricted to Admin.');return;}if(v==='spreadsheets'||v==='documents'){window.location.assign(studioHomeHref(v==='spreadsheets'?'sheet':'document'));return;}setShowInventoryCamera(false);setShowProductCamera(false);setShowBarcodeCamera(false);if(bodGate&&v!=='cash'){setView('cash');setMenuOpen(false);setDialog('count');notify('Complete your Opening Cash Count first.');return;}if(v==='inventory'){window.location.assign('/online-inventory');return;}setView(v);setMenuOpen(false);resetList()}
  function completeInitialSetup(ev:React.FormEvent){
   ev.preventDefault();
   if(setupPassword!==setupConfirm){notify('Passwords do not match.');return;}
