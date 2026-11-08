@@ -30,7 +30,7 @@ export default function OnlineInventoryPage(){
   let mounted=true;
   getCurrentStaff().then(async identity=>{
    if(!mounted)return;
-   if(!identity){setMessage('Please sign in at /staff-login-test first.');return;}
+   if(!identity){window.location.replace('/staff-login-test?next=%2Fonline-inventory');return;}
    setStaff(identity);
    const selected=identity.branch??'UCM';setBranch(selected);
    try{await refresh(selected);if(mounted)setMessage('Connected. All changes are recorded in Supabase.');}
@@ -62,7 +62,7 @@ export default function OnlineInventoryPage(){
  const visible=filtered.slice((Math.min(page,pageCount)-1)*15,Math.min(page,pageCount)*15);
  const allowedKinds:StockOperation[]=staff?.role==='admin'?['receive','issue','adjust','transfer']:staff?.role==='pb'?['receive','issue']:['issue'];
  return <main style={{maxWidth:1050,margin:'24px auto',padding:20,fontFamily:'Arial,sans-serif',lineHeight:1.5}}>
-  <h1>UC / Mastermind — Online Inventory</h1>
+  <p><a href="/" style={{color:'#8c6900',fontWeight:700,textDecoration:'none'}}>← Back to Cashier Dashboard</a></p><h1>UC / Mastermind — Online Inventory</h1>
   <p>Development preview · Connected to Supabase · Existing local inventory is not synchronized.</p>
   <p role="status">{message}</p>
   {staff&&<><p><strong>{staff.displayName}</strong> · {staff.role} · {staff.branch??'All branches'}</p>
