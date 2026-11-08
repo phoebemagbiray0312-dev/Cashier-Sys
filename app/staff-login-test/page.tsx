@@ -39,7 +39,7 @@ export default function StaffLoginTestPage() {
     <h1>Staff account verification</h1>
     <p>Use your provisioned Supabase staff username and password. This does not migrate browser-local Cashier records.</p>
     {staff ? <section><p>Authenticated: {staff.displayName}</p><p>Role: {staff.role}</p><p>Branch: {staff.branch ?? 'All branches (admin)'}</p>
-      <p><a href="/online-inventory">Open Online Inventory →</a></p><button disabled={busy} onClick={logout}>Sign out</button></section> :
+      <p><a href="/online-inventory">Open Online Inventory →</a></p>{staff.role === "admin" && <p><a href="/staff-management">Manage Staff Accounts →</a></p>}<button disabled={busy} onClick={logout}>Sign out</button></section> :
       <form onSubmit={submit} style={{display:'grid',gap:12}}>
         <label>Username<input style={{display:'block',width:'100%',padding:8}} type="text" required autoComplete="username" value={username} onChange={e=>setUsername(e.target.value)}/></label>
         <label>Password<input style={{display:'block',width:'100%',padding:8}} type="password" required autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)}/></label>
