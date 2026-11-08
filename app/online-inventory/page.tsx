@@ -6,7 +6,9 @@ import {listOnlineProducts,type OnlineProduct} from '@/lib/online-cashier';
 import {listStockMovements,recordStockMovement,type StockMovement,type StockOperation} from '@/lib/online-inventory';
 
 const branches = ['UCQC','UCM','UCLP','MMM'];
+const branchNames:Record<string,string>={UCQC:'Underchargers Quezon City',UCM:'Underchargers Mandaluyong',UCLP:'Underchargers Las Piñas',MMM:'Mastermind Mandaluyong'};
 export default function OnlineInventoryPage(){
+ const [embedded,setEmbedded]=useState(false);
  const [staff,setStaff]=useState<StaffIdentity|null>(null);
  const [products,setProducts]=useState<OnlineProduct[]>([]);
  const [history,setHistory]=useState<StockMovement[]>([]);
@@ -26,6 +28,7 @@ export default function OnlineInventoryPage(){
   setProducts(p);setHistory(h);setPage(1);
   setProductId(old=>p.some(x=>x.id===old)?old:(p[0]?.id??''));
  }
+ useEffect(()=>{setEmbedded(new URLSearchParams(window.location.search).get('embedded')==='1');},[]);
  useEffect(()=>{
   let mounted=true;
   getCurrentStaff().then(async identity=>{
@@ -61,16 +64,17 @@ export default function OnlineInventoryPage(){
  const pageCount=Math.max(1,Math.ceil(filtered.length/15));
  const visible=filtered.slice((Math.min(page,pageCount)-1)*15,Math.min(page,pageCount)*15);
  const allowedKinds:StockOperation[]=staff?.role==='admin'?['receive','issue','adjust','transfer']:staff?.role==='pb'?['receive','issue']:['issue'];
- return <main style={{maxWidth:1050,margin:'24px auto',padding:20,fontFamily:'Arial,sans-serif',lineHeight:1.5}}>
-  <p><a href="/" style={{color:'#8c6900',fontWeight:700,textDecoration:'none'}}>← Back to Cashier Dashboard</a></p><h1>UC / Mastermind — Online Inventory</h1>
-  <p>Development preview · Connected to Supabase · Existing local inventory is not synchronized.</p>
+ return <main style={{maxWidth:'100%',margin:0,padding:embedded?'18px 22px':28,fontFamily:'inherit',lineHeight:1.5,color:'#27303f',background:'#fff',minHeight:'100vh'}}>
+ <style>{` .online-inventory select,.online-inventory input{border:1px solid #d0d5dd;border-radius:8px;padding:10px 12px;background:white;color:#27303f;max-width:100%;box-sizing:border-box}.online-inventory label{font-size:13px;font-weight:600;display:grid;gap:5px}.online-inventory button{background:#f4c542;border:0;border-radius:8px;padding:9px 15px;font-weight:700;cursor:pointer;color:#242424}.online-inventory button:disabled{opacity:.5;cursor:not-allowed}.online-inventory table{border-collapse:collapse;width:100%;font-size:13px}.online-inventory th{background:#f7f8fa;color:#667085;text-transform:uppercase;font-size:11px;letter-spacing:.04em}.online-inventory td,.online-inventory th{padding:11px 13px;border-bottom:1px solid #e8eaef;text-align:left}.online-inventory h2{font-size:18px;margin:24px 0 10px}.online-inventory .inventory-card{border:1px solid #e5e7eb;border-radius:12px;padding:18px;margin:18px 0;background:#fff}`}</style><div className="online-inventory">
+  {!embedded&&<p><a href="/" style={{color:'#8c6900',fontWeight:700,textDecoration:'none'}}>← Back to Cashier Dashboard</a></p>}<h1 style={{fontSize:24,margin:'0 0 4px'}}>Online Inventory</h1>
+  <p style={{fontSize:13,color:'#667085',margin:'0 0 12px'}}>Live Supabase inventory · Local Cashier inventory records are not yet synchronized.</p>
   <p role="status">{message}</p>
   {staff&&<><p><strong>{staff.displayName}</strong> · {staff.role} · {staff.branch??'All branches'}</p>
-   <p><a href="/staff-login-test">Staff login</a> · <a href="/online-preview">Backend overview</a></p>
+   {!embedded&&<p><a href="/staff-login-test">Staff login</a></p>}
    <label>Branch <select value={branch} onChange={e=>void changeBranch(e.target.value)} disabled={busy}>
-    {branches.filter(b=>staff.role==='admin'||b===staff.branch).map(b=><option key={b} value={b}>{b}</option>)}
+    {branches.filter(b=>staff.role==='admin'||b===staff.branch).map(b=><option key={b} value={b}>{branchNames[b]}</option>)}
    </select></label>
-   <div style={{display:'flex',gap:12,flexWrap:'wrap',margin:'18px 0'}}><div style={{padding:12,border:'1px solid #ddd',borderRadius:8}}>Products: <strong>{products.length}</strong></div><div style={{padding:12,border:'1px solid #ddd',borderRadius:8}}>Zero balance: <strong>{products.filter(p=>Number(p.stock_qty)===0).length}</strong></div><a href="/stock-requests" style={{padding:12,background:'#f2c94c',borderRadius:8,color:'#222',textDecoration:'none'}}>Stock Requests →</a></div>
+   <div style={{display:'flex',gap:12,flexWrap:'wrap',margin:'18px 0'}} className="inventory-card"><div style={{padding:12,border:'1px solid #ddd',borderRadius:8}}>Products: <strong>{products.length}</strong></div><div style={{padding:12,border:'1px solid #ddd',borderRadius:8}}>Zero balance: <strong>{products.filter(p=>Number(p.stock_qty)===0).length}</strong></div><a href="/stock-requests" style={{padding:12,background:'#f2c94c',borderRadius:8,color:'#222',textDecoration:'none'}}>Stock Requests →</a></div>
    <label>Search products <input placeholder="Search name or SKU" value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}} style={{padding:10,width:'100%',maxWidth:450,margin:'10px 0'}} /></label>
    <h2>Products ({filtered.length} of {products.length})</h2>
    <p style={{fontSize:13}}>Zero balances may be unverified opening stock. Product prices are not yet encoded.</p>
@@ -91,5 +95,5 @@ export default function OnlineInventoryPage(){
    {showHistory&&<div style={{overflowX:'auto'}}><table style={{width:'100%',textAlign:'left'}}><thead><tr><th>Date</th><th>Action</th><th>Change</th><th>Before</th><th>After</th><th>Reason</th></tr></thead>
     <tbody>{history.map(h=><tr key={h.id}><td>{new Date(h.created_at).toLocaleString('en-PH')}</td><td>{h.movement_type}</td><td>{h.quantity_delta}</td><td>{h.quantity_before}</td><td>{h.quantity_after}</td><td>{h.reason}</td></tr>)}</tbody></table></div>}
   </>}
- </main>;
+ </div></main>;
 }
