@@ -6,17 +6,18 @@ type RequestRow={id:string;product_name:string;product_sku:string;from_branch:st
 type Product={sku:string;name:string;branch_id:string;stock_qty:number};
 const UC=['UCM','UCQC','UCLP'];
 export default function StockRequestsPage(){
+ const [embedded,setEmbedded]=useState(false);
  const [staff,setStaff]=useState<any>(null),[rows,setRows]=useState<RequestRow[]>([]),[products,setProducts]=useState<Product[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
  const [source,setSource]=useState('UCM'),[dest,setDest]=useState('UCQC'),[sku,setSku]=useState(''),[qty,setQty]=useState('1'),[reason,setReason]=useState('Branch stock replenishment');
  const load=async()=>{const s=await getCurrentStaff();setStaff(s);if(!s)return;const db=getSupabaseClient();const [a,b]=await Promise.all([db.from('cms_stock_requests').select('id,product_name,product_sku,from_branch,to_branch,quantity,status,reason,created_at,requested_by').order('created_at',{ascending:false}).limit(100),db.from('cms_products').select('sku,name,branch_id,stock_qty').in('branch_id',UC).order('name')]);if(a.error||b.error)throw new Error(a.error?.message||b.error?.message);setRows((a.data||[]) as RequestRow[]);setProducts((b.data||[]) as Product[])};
- useEffect(()=>{load().catch(e=>setError(e.message))},[]);
+ useEffect(()=>{setEmbedded(new URLSearchParams(window.location.search).get('embedded')==='1');load().catch(e=>setError(e.message))},[]);
  const run=async(fn:()=>Promise<void>)=>{setBusy(true);setError('');setMessage('');try{await fn();await load()}catch(e:any){setError(e.message||'Request failed')}finally{setBusy(false)}};
  const submit=()=>run(async()=>{const n=Number(qty);if(!Number.isFinite(n)||n<=0||source===dest||!sku)throw new Error('Choose a product, different branches and a positive quantity.');const {error}=await getSupabaseClient().rpc('cms_submit_stock_request',{p_sku:sku,p_from_branch:source,p_to_branch:admin?dest:(branch||dest),p_quantity:n,p_reason:reason});if(error)throw error;setMessage('Stock request submitted.')});
  const action=(id:string,verb:string)=>run(async()=>{const note=verb==='reject'?window.prompt('Reason for rejection (required):')||'':null;if(verb==='reject'&&(note ?? '').trim().length<3)return;const {error}=await getSupabaseClient().rpc('cms_process_stock_request',{p_request_id:id,p_action:verb,p_note:note});if(error)throw error;setMessage('Request updated: '+verb)});
  const branch=staff?.branch;const admin=String(staff?.role||'').toLowerCase()==='admin';
  const can=(r:RequestRow,verb:string)=>{if(!admin&&verb==='receive'&&branch!==r.to_branch)return false;if(!admin&&verb!=='receive'&&branch!==r.from_branch)return false;if(['approve','reject','release'].includes(verb)&&r.requested_by===staff?.user_id)return false;return true};
  const available=products.filter(p=>p.branch_id===source);
- return <main className="stock-requests-page">
+ return <main className="stock-requests-page" style={{maxWidth:embedded?'100%':1120,padding:embedded?'14px 16px 32px':undefined}}>
  <style>{`
  .stock-requests-page{width:100%;max-width:1120px;margin:0 auto;padding:22px 24px 48px;box-sizing:border-box;font-family:inherit;color:#253044}
  .stock-requests-page *{box-sizing:border-box}
@@ -54,7 +55,7 @@ export default function StockRequestsPage(){
  .stock-requests-page .sr-item-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
  @media(max-width:700px){.stock-requests-page{padding:14px}.stock-requests-page .sr-panel-head,.stock-requests-page .sr-form{padding:16px}.stock-requests-page .sr-grid{grid-template-columns:1fr}.stock-requests-page .sr-route-grid{grid-template-columns:1fr}.stock-requests-page .sr-route{transform:rotate(90deg);height:32px;width:32px}.stock-requests-page .sr-item{align-items:flex-start;flex-direction:column}.stock-requests-page .sr-history{padding:10px 16px}}
  `}</style>
- <a className="sr-back" href="/online-inventory">← Back to Inventory</a>
+ <a className="sr-back" href={embedded?"/online-inventory?embedded=1":"/?view=inventory"}>← Back to Inventory</a>
  <h1 className="sr-title">Inter-Branch Stock Requests</h1>
  <p className="sr-subtitle">Transfer inventory between UC branches with approval and movement tracking.</p>
  {!staff?<section className="sr-panel"><div className="sr-form">Sign in using an active staff account to access this page.</div></section>:<>
