@@ -944,3 +944,31 @@
  .login-panel .login-brand{justify-content:center}
  .login-panel .login-company-logo{transform:none}
 }
+
+
+/* Inventory Excel import — compact, aligned admin controls */
+.inventory-import-disclosure{margin:14px 0 16px;border:1px solid #e4e8ee;border-radius:12px;background:#fff;overflow:hidden}
+.inventory-import-trigger{display:flex;align-items:center;gap:12px;min-height:66px;padding:12px 16px;cursor:pointer;list-style:none}
+.inventory-import-trigger::-webkit-details-marker{display:none}
+.inventory-import-trigger:hover{background:#fffcf1}
+.inventory-import-trigger-icon{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;flex:none;background:#fff4cf;color:#9c6a00;font-size:24px;font-weight:700}
+.inventory-import-trigger-copy{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.inventory-import-trigger-copy strong{font-size:14px;color:#253044}
+.inventory-import-trigger-copy small{font-size:12px;color:#788397;font-weight:400}
+.inventory-import-admin-tag{font-size:11px;font-weight:700;color:#89630d;background:#fff6d9;border-radius:6px;padding:5px 9px}
+.inventory-import-chevron{font-size:22px;color:#6d788a;line-height:1;transition:transform .18s}
+.inventory-import-disclosure[open] .inventory-import-chevron{transform:rotate(180deg)}
+.inventory-import-content{border-top:1px solid #e9edf2;padding:18px}
+.inventory-import-panel{width:100%;margin:0}
+.inventory-import-panel-head{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.inventory-import-description{flex:1;min-width:240px}
+.inventory-import-description h3{font-size:15px;font-weight:700;color:#253044;margin:0 0 6px}
+.inventory-import-description p{font-size:12px;line-height:1.55;color:#6e7a8d;margin:0 0 9px;max-width:560px}
+.inventory-import-branch-note{font-size:12px;color:#7a8493}
+.inventory-import-branch-note strong{color:#344054}
+.inventory-import-upload{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:42px;padding:10px 17px;border-radius:9px;background:#f8c641;color:#29251a;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer;transition:background .15s;flex:none}
+.inventory-import-upload:hover{background:#eeb72d}
+.inventory-import-upload.is-busy{opacity:.6;cursor:wait}
+.inventory-import-upload input{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+.inventory-import-upload:focus-within{outline:3px solid #d8a52d;outline-offset:2px}
+@media(max-width:640px){.inventory-import-trigger{padding:11px 12px}.inventory-import-admin-tag{display:none}.inventory-import-content{padding:14px}.inventory-import-panel-head{align-items:stretch}.inventory-import-description{min-width:0}.inventory-import-upload{width:100%}}
