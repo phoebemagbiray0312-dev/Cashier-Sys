@@ -14,6 +14,7 @@ export interface StockMovement {
   transfer_group: string | null;
   performed_by: string;
   created_at: string;
+  po_id: string | null;
 }
 
 /** All inventory writes are validated and logged by a single database transaction. */
@@ -23,6 +24,7 @@ export async function recordStockMovement(input: {
   quantity: number;
   reason: string;
   destinationBranch?: string;
+  poId?: string;
 }): Promise<Record<string, unknown>> {
   const staff = await getCurrentStaff();
   if (!staff) throw new Error('Active staff login required.');
@@ -30,7 +32,7 @@ export async function recordStockMovement(input: {
     throw new Error('Invalid stock quantity.');
   }
   if (input.reason.trim().length < 3) throw new Error('Provide a reason for the stock movement.');
-  const { data, error } = await getSupabaseClient().rpc('cms_record_stock_movement', {
+  const { data, error } = input.kind==='issue' && input.poId ? await getSupabaseClient().rpc('cms_issue_stock_for_po',{p_product_id:input.productId,p_quantity:input.quantity,p_reason:input.reason.trim(),p_po_id:input.poId}) : await getSupabaseClient().rpc('cms_record_stock_movement', {
     p_product_id: input.productId,
     p_kind: input.kind,
     p_quantity: input.quantity,
@@ -43,7 +45,7 @@ export async function recordStockMovement(input: {
 export async function listStockMovements(branchId?: string, startDate?: string, endDate?: string, type?: 'all'|'issue'): Promise<StockMovement[]> {
   if (!await getCurrentStaff()) throw new Error('Active staff login required.');
   let query = getSupabaseClient().from('cms_stock_movements')
-    .select('id,product_id,branch_id,movement_type,quantity_delta,quantity_before,quantity_after,reason,transfer_group,performed_by,created_at')
+    .select('id,product_id,branch_id,movement_type,quantity_delta,quantity_before,quantity_after,reason,transfer_group,performed_by,created_at,po_id')
     .order('created_at', { ascending: false }).limit(1000);
   if (branchId) query = query.eq('branch_id', branchId);
   if (startDate) query = query.gte('created_at',new Date(startDate+'T00:00:00+08:00').toISOString());
