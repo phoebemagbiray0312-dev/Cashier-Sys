@@ -1,3 +1,14 @@
+## v9.26 — POS & Sales saved online (November 2026)
+
+POS & Sales records now live in Supabase instead of the browser. After staff sign-in, the app loads POS from `cms_sales.payload` and saves every POS change through the `cms_save_pos` / `cms_delete_pos_draft` RPCs (`lib/pos-sync.ts`, migration `supabase/migrations/20261109_pos_online_sales.sql`).
+
+- Server enforces role (cashier/admin), branch access, one open POS per plate across all branches, and version checks so two devices cannot overwrite each other (conflicts reload the latest copy).
+- Lines and payments are also written to `cms_sale_lines` / `cms_sale_payments` for reporting.
+- Direct table writes from the browser are revoked; reads stay branch-scoped by RLS.
+- Network/session failures keep the local change and retry every 15 s; server rejections roll the POS back and show the reason.
+- Browser-only POS records found at sign-in are not uploaded; a copy is kept in `localStorage` key `uc_local_pos_backup_v926`.
+- Still browser-local: revolving fund, cash counts, turnovers, inventory ledger, disbursements and Docs/Sheets.
+
 ## v9.25 — Admin Profitability Analytics (management estimate)
 
 Admin sidebar → **Profitability Analytics**: an operational management report using browser-local POS, cost/stock and RF/RFP records. Filters cover current/previous month, year or custom dates and combined Underchargers, Mastermind, or an individual branch. The management total in ALL mode is only a comparison; companies remain reported separately. Data is read-only with source-record drilldown and CSV export.
