@@ -972,3 +972,10 @@
 .inventory-import-upload input{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
 .inventory-import-upload:focus-within{outline:3px solid #d8a52d;outline-offset:2px}
 @media(max-width:640px){.inventory-import-trigger{padding:11px 12px}.inventory-import-admin-tag{display:none}.inventory-import-content{padding:14px}.inventory-import-panel-head{align-items:stretch}.inventory-import-description{min-width:0}.inventory-import-upload{width:100%}}
+
+
+/* Inventory filters: branch, category, search in one row */
+.online-inventory .inventory-products-panel .inventory-filter-row{display:grid;grid-template-columns:minmax(190px,1.15fr) minmax(170px,.85fr) minmax(230px,2fr);gap:10px;align-items:center}
+.online-inventory .inventory-products-panel .inventory-filter-row select,.online-inventory .inventory-products-panel .inventory-filter-row input{width:100%;min-width:0;min-height:44px;margin:0}
+@media(max-width:850px){.online-inventory .inventory-products-panel .inventory-filter-row{grid-template-columns:repeat(2,minmax(0,1fr))}.online-inventory .inventory-products-panel .inventory-filter-row input{grid-column:1/-1}}
+@media(max-width:540px){.online-inventory .inventory-products-panel .inventory-filter-row{grid-template-columns:1fr}.online-inventory .inventory-products-panel .inventory-filter-row input{grid-column:auto}}
