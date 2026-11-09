@@ -7,10 +7,11 @@ type Product={sku:string;name:string;branch_id:string;stock_qty:number};
 const UC=['UCM','UCQC','UCLP'];
 export default function StockRequestsPage(){
  const [embedded,setEmbedded]=useState(false);
+ const [mode,setMode]=useState<'new'|'history'>('new');
  const [staff,setStaff]=useState<any>(null),[rows,setRows]=useState<RequestRow[]>([]),[products,setProducts]=useState<Product[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
  const [source,setSource]=useState('UCM'),[dest,setDest]=useState('UCQC'),[sku,setSku]=useState(''),[qty,setQty]=useState('1'),[reason,setReason]=useState('Branch stock replenishment');
  const load=async()=>{const s=await getCurrentStaff();setStaff(s);if(!s)return;const db=getSupabaseClient();const [a,b]=await Promise.all([db.from('cms_stock_requests').select('id,product_name,product_sku,from_branch,to_branch,quantity,status,reason,created_at,requested_by').order('created_at',{ascending:false}).limit(100),db.from('cms_products').select('sku,name,branch_id,stock_qty').in('branch_id',UC).order('name')]);if(a.error||b.error)throw new Error(a.error?.message||b.error?.message);setRows((a.data||[]) as RequestRow[]);setProducts((b.data||[]) as Product[])};
- useEffect(()=>{setEmbedded(new URLSearchParams(window.location.search).get('embedded')==='1');load().catch(e=>setError(e.message))},[]);
+ useEffect(()=>{const params=new URLSearchParams(window.location.search);setEmbedded(params.get('embedded')==='1');setMode(params.get('mode')==='history'?'history':'new');load().catch(e=>setError(e.message))},[]);
  const run=async(fn:()=>Promise<void>)=>{setBusy(true);setError('');setMessage('');try{await fn();await load()}catch(e:any){setError(e.message||'Request failed')}finally{setBusy(false)}};
  const submit=()=>run(async()=>{const n=Number(qty);if(!Number.isFinite(n)||n<=0||source===dest||!sku)throw new Error('Choose a product, different branches and a positive quantity.');const {error}=await getSupabaseClient().rpc('cms_submit_stock_request',{p_sku:sku,p_from_branch:source,p_to_branch:admin?dest:(branch||dest),p_quantity:n,p_reason:reason});if(error)throw error;setMessage('Stock request submitted.')});
  const action=(id:string,verb:string)=>run(async()=>{const note=verb==='reject'?window.prompt('Reason for rejection (required):')||'':null;if(verb==='reject'&&(note ?? '').trim().length<3)return;const {error}=await getSupabaseClient().rpc('cms_process_stock_request',{p_request_id:id,p_action:verb,p_note:note});if(error)throw error;setMessage('Request updated: '+verb)});
@@ -21,7 +22,7 @@ export default function StockRequestsPage(){
  <style>{`
  .stock-requests-page{width:100%;max-width:1120px;margin:0 auto;padding:22px 24px 48px;box-sizing:border-box;font-family:inherit;color:#253044}
  .stock-requests-page *{box-sizing:border-box}
- .stock-requests-page .sr-back{display:inline-flex;align-items:center;gap:8px;color:#667085;text-decoration:none;font-size:12px;font-weight:650;margin-bottom:14px}
+ .stock-requests-page .sr-mode-nav{display:flex;gap:8px;margin:-6px 0 18px}.stock-requests-page .sr-mode-nav a{border:1px solid #e5e7eb;border-radius:9px;padding:9px 14px;text-decoration:none;font-size:12px;font-weight:700;color:#586174;background:#fff}.stock-requests-page .sr-mode-nav a.active{background:#fff2c0;border-color:#f2d66f;color:#7e5b00}.stock-requests-page .sr-back{display:inline-flex;align-items:center;gap:8px;color:#667085;text-decoration:none;font-size:12px;font-weight:650;margin-bottom:14px}
  .stock-requests-page .sr-title{font-size:23px;font-weight:750;letter-spacing:-.5px;margin:0 0 5px}
  .stock-requests-page .sr-subtitle{font-size:13px;color:#7a8494;margin:0 0 22px}
  .stock-requests-page .sr-panel{border:1px solid #e6e9ee;background:#fff;border-radius:16px;box-shadow:0 3px 12px rgba(16,24,40,.035);overflow:hidden;margin-bottom:18px}
@@ -57,9 +58,9 @@ export default function StockRequestsPage(){
  `}</style>
  <a className="sr-back" href={embedded?"/online-inventory?embedded=1":"/?view=inventory"}>← Back to Inventory</a>
  <h1 className="sr-title">Inter-Branch Stock Requests</h1>
- <p className="sr-subtitle">Transfer inventory between UC branches with approval and movement tracking.</p>
+ <p className="sr-subtitle">Transfer inventory between UC branches with approval and movement tracking.</p><div className="sr-mode-nav"><a className={mode==='new'?'active':''} href="/stock-requests?embedded=1&mode=new">+ New Stock Request</a><a className={mode==='history'?'active':''} href="/stock-requests?embedded=1&mode=history">View All Requests</a></div>
  {!staff?<section className="sr-panel"><div className="sr-form">Sign in using an active staff account to access this page.</div></section>:<>
- <section className="sr-panel">
+ {mode==='new'&&<section className="sr-panel">
   <div className="sr-panel-head"><div><h2>New Stock Request</h2><p>Fill in the transfer details below</p></div><span className="sr-tag">UC Branches</span></div>
   <div className="sr-form">
    <div className="sr-route-grid"><label className="sr-field">From Branch<select value={source} onChange={e=>{setSource(e.target.value);setSku('')}}>{UC.map(b=><option key={b} value={b}>{b}</option>)}</select></label><span className="sr-route" aria-hidden="true">→</span><label className="sr-field">To Branch<select value={admin?dest:(branch||dest)} disabled={!admin} onChange={e=>setDest(e.target.value)}>{UC.filter(b=>admin||b===branch).map(b=><option key={b} value={b}>{b}</option>)}</select></label></div>
@@ -68,9 +69,9 @@ export default function StockRequestsPage(){
    <div className="sr-note"><span aria-hidden="true">ⓘ</span><span>The destination branch must already have the selected SKU. Stock balances will only change after approval, release, and receipt.</span></div>
    <div className="sr-actions"><button className="sr-primary" disabled={busy||!sku} onClick={submit}>{busy?'Processing...':'Submit Stock Request'}</button></div>
   </div>
- </section>
- <section className="sr-panel"><div className="sr-panel-head"><div><h2>Request History</h2><p>Track submitted requests and approval status</p></div><span className="sr-tag">{rows.length} requests</span></div>
- <div className="sr-history">{rows.length===0?<div className="sr-empty"><strong>No stock requests yet</strong>Submitted stock requests will appear here.</div>:rows.map(r=><article key={r.id} className="sr-item"><div><strong>{r.product_name}</strong> <span className="sr-status">{r.status}</span><p className="sr-meta">{r.quantity} units · {r.from_branch} → {r.to_branch} · {new Date(r.created_at).toLocaleString('en-PH')}</p><p className="sr-meta">{r.reason}</p></div><div className="sr-item-actions">{r.status==='pending'&&can(r,'approve')&&<><button className="sr-primary" disabled={busy} onClick={()=>action(r.id,'approve')}>Approve</button><button className="sr-danger" disabled={busy} onClick={()=>action(r.id,'reject')}>Reject</button></>}{r.status==='approved'&&can(r,'release')&&<button className="sr-primary" disabled={busy} onClick={()=>action(r.id,'release')}>Release Stock</button>}{r.status==='released'&&can(r,'receive')&&<button className="sr-primary" disabled={busy} onClick={()=>action(r.id,'receive')}>Confirm Received</button>}</div></article>)}</div></section>
+ </section>}
+ {mode==='history'&&<section className="sr-panel"><div className="sr-panel-head"><div><h2>Request History</h2><p>Track submitted requests and approval status</p></div><span className="sr-tag">{rows.length} requests</span></div>
+ <div className="sr-history">{rows.length===0?<div className="sr-empty"><strong>No stock requests yet</strong>Submitted stock requests will appear here.</div>:rows.map(r=><article key={r.id} className="sr-item"><div><strong>{r.product_name}</strong> <span className="sr-status">{r.status}</span><p className="sr-meta">{r.quantity} units · {r.from_branch} → {r.to_branch} · {new Date(r.created_at).toLocaleString('en-PH')}</p><p className="sr-meta">{r.reason}</p></div><div className="sr-item-actions">{r.status==='pending'&&can(r,'approve')&&<><button className="sr-primary" disabled={busy} onClick={()=>action(r.id,'approve')}>Approve</button><button className="sr-danger" disabled={busy} onClick={()=>action(r.id,'reject')}>Reject</button></>}{r.status==='approved'&&can(r,'release')&&<button className="sr-primary" disabled={busy} onClick={()=>action(r.id,'release')}>Release Stock</button>}{r.status==='released'&&can(r,'receive')&&<button className="sr-primary" disabled={busy} onClick={()=>action(r.id,'receive')}>Confirm Received</button>}</div></article>)}</div></section>}
  </>}
  {error&&<p role="alert" style={{color:'#b42318',fontSize:12}}>{error}</p>}{message&&<p role="status" style={{color:'#067647',fontSize:12}}>{message}</p>}
  </main>;
