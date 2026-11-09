@@ -2,6 +2,7 @@
 
 import {useEffect,useState} from 'react';
 import {getCurrentStaff,type StaffIdentity} from '@/lib/supabase-auth';
+import {getSupabaseClient} from '@/lib/supabase-client';
 import {listOnlineProducts,type OnlineProduct} from '@/lib/online-cashier';
 import {listStockMovements,recordStockMovement,type StockMovement,type StockOperation} from '@/lib/online-inventory';
 
@@ -25,6 +26,10 @@ export default function OnlineInventoryPage(){
  const [showHistory,setShowHistory]=useState(false);
  const [stockFilter,setStockFilter]=useState<'all'|'zero'>('all');
  const [showMovement,setShowMovement]=useState(false);
+ const [productEditor,setProductEditor]=useState<OnlineProduct|null|undefined>(undefined);
+ const [editSku,setEditSku]=useState('');
+ const [editName,setEditName]=useState('');
+ const [editPrice,setEditPrice]=useState('0');
  async function refresh(branchId:string){
   const [p,h]=await Promise.all([listOnlineProducts(branchId),listStockMovements(branchId)]);
   setProducts(p);setHistory(h);setPage(1);
@@ -62,6 +67,26 @@ export default function OnlineInventoryPage(){
   }catch(err){setMessage(err instanceof Error?err.message:'Stock update failed.');}
   finally{setBusy(false);}
  }
+ function openProductEditor(product?:OnlineProduct){if(staff?.role!=='admin')return;setProductEditor(product??null);setEditSku(product?.sku??'');setEditName(product?.name??'');setEditPrice(String(product?.unit_price??0));}
+ async function saveProduct(e:React.FormEvent){
+  e.preventDefault();if(staff?.role!=='admin'||busy||productEditor===undefined)return;
+  const sku=editSku.trim().toUpperCase(),name=editName.trim(),price=Number(editPrice);
+  if(!sku||sku.length>80||!name||name.length>200||!Number.isFinite(price)||price<0||price>100000000){setMessage('Enter a valid SKU, product name and non-negative price.');return;}
+  setBusy(true);
+  try{
+   const supabase=getSupabaseClient();
+   if(productEditor){
+    const {error}=await supabase.from('cms_products').update({sku,name,unit_price:price}).eq('id',productEditor.id).eq('branch_id',branch);
+    if(error)throw error;
+   }else{
+    const {data:{user},error:authError}=await supabase.auth.getUser();if(authError||!user)throw new Error('Please sign in again.');
+    const {error}=await supabase.from('cms_products').insert({branch_id:branch,sku,name,unit_price:price,stock_qty:0,created_by:user.id});
+    if(error)throw error;
+   }
+   await refresh(branch);setProductEditor(undefined);setMessage('Product saved successfully.');
+  }catch(err){setMessage(err instanceof Error?err.message:'Could not save product.');}
+  finally{setBusy(false);}
+ }
  const filtered=products.filter(p=>(stockFilter==='all'||Number(p.stock_qty)===0)&&(p.name+' '+p.sku).toLowerCase().includes(search.toLowerCase().trim()));
  const pageCount=Math.max(1,Math.ceil(filtered.length/10));
  const visible=filtered.slice((Math.min(page,pageCount)-1)*10,Math.min(page,pageCount)*10);
@@ -76,12 +101,13 @@ export default function OnlineInventoryPage(){
    {!embedded&&<p><a href="/staff-login-test">Staff login</a></p>}
    <div className="inventory-toolbar"><label style={{display:'flex',alignItems:'center',gap:8}}>Branch <select value={branch} onChange={e=>void changeBranch(e.target.value)} disabled={busy}>
     {branches.filter(b=>staff.role==='admin'||b===staff.branch).map(b=><option key={b} value={b}>{branchNames[b]}</option>)}
-   </select></label><button type="button" onClick={()=>setShowMovement(true)} disabled={!products.length}>+ Stock Movement</button><a href="/stock-requests" style={{padding:'9px 14px',background:'#fff4c5',borderRadius:8,color:'#7a5700',fontWeight:700,textDecoration:'none'}}>Requests →</a></div>
+   </select></label>{staff.role==='admin'&&<button type="button" onClick={()=>openProductEditor()}>+ Add Product</button>}<button type="button" onClick={()=>setShowMovement(true)} disabled={!products.length}>+ Stock Movement</button><a href="/stock-requests" style={{padding:'9px 14px',background:'#fff4c5',borderRadius:8,color:'#7a5700',fontWeight:700,textDecoration:'none'}}>Requests →</a></div>
    <div style={{display:'flex',gap:10,flexWrap:'wrap',margin:'8px 0 12px'}}><button type="button" aria-pressed={stockFilter==='all'} onClick={()=>{setStockFilter('all');setPage(1)}} className="inventory-card inventory-summary">Products <strong>{products.length}</strong></button><button type="button" aria-pressed={stockFilter==='zero'} onClick={()=>{setStockFilter('zero');setPage(1)}} className="inventory-card inventory-summary">Zero balance <strong>{products.filter(p=>Number(p.stock_qty)===0).length}</strong></button><button type="button" onClick={()=>setShowHistory(true)} className="inventory-card inventory-summary">Movements <strong>{history.length}</strong></button></div>
    <div className="inventory-toolbar"><input aria-label="Search products" placeholder="Search products by name or SKU" value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}}/></div>
-   <div className="inventory-table-wrap"><table><thead><tr><th>SKU</th><th>Product</th><th>Available</th><th>Price</th><th>Action</th></tr></thead><tbody>{visible.map(p=><tr key={p.id}><td>{p.sku}</td><td>{p.name}</td><td>{p.stock_qty}</td><td>{Number(p.unit_price)===0?'Not set':'₱'+Number(p.unit_price).toFixed(2)}</td><td><button type="button" onClick={()=>openStock(p)} aria-label={'Update stock for '+p.name} title="Stock In / Out" className="inventory-icon-action"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="3"/><path d="M8 9h8M12 7v4M8 15h8"/></svg></button></td></tr>)}</tbody></table></div>
+   <div className="inventory-table-wrap"><table><thead><tr><th>SKU</th><th>Product</th><th>Available</th><th>Price</th><th>Action</th></tr></thead><tbody>{visible.map(p=><tr key={p.id}><td>{p.sku}</td><td>{p.name}</td><td>{p.stock_qty}</td><td>{Number(p.unit_price)===0?'Not set':'₱'+Number(p.unit_price).toFixed(2)}</td><td><button type="button" onClick={()=>openStock(p)} aria-label={'Update stock for '+p.name} title="Stock In / Out" className="inventory-icon-action"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="3"/><path d="M8 9h8M12 7v4M8 15h8"/></svg></button>{staff.role==='admin'&&<button type="button" onClick={()=>openProductEditor(p)} aria-label={'Edit product '+p.name} title="Edit product details" className="inventory-icon-action" style={{marginLeft:6}}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4Z"/></svg></button>}</td></tr>)}</tbody></table></div>
    <div className="inventory-toolbar"><button type="button" disabled={page<=1} onClick={()=>setPage(p=>p-1)}>Previous</button><span style={{fontSize:13}}>Page {Math.min(page,pageCount)} of {pageCount}</span><button type="button" disabled={page>=pageCount} onClick={()=>setPage(p=>p+1)}>Next</button></div>
    {products.length===0&&<p>No online products for this branch yet. An Admin must register a product before stock movements can be recorded.</p>}
+   {productEditor!==undefined&&staff.role==='admin'&&<div className="inventory-modal-backdrop" role="presentation" onClick={()=>{if(!busy)setProductEditor(undefined)}}><div className="inventory-modal inventory-stock-dialog" role="dialog" aria-modal="true" aria-label={productEditor?'Edit Product':'Add Product'} onClick={e=>e.stopPropagation()}><div className="stock-dialog-header"><div><h2>{productEditor?'Edit Product':'Add Product'}</h2><p className="stock-dialog-note">{branchNames[branch]} · Stock quantities are managed separately through Stock Movement.</p></div><button type="button" className="stock-dialog-close" onClick={()=>setProductEditor(undefined)} disabled={busy} aria-label="Close">✕</button></div><form className="stock-dialog-form" onSubmit={e=>void saveProduct(e)}><label>SKU<input required maxLength={80} value={editSku} onChange={e=>setEditSku(e.target.value)} disabled={busy}/></label><label>Product name<input required maxLength={200} value={editName} onChange={e=>setEditName(e.target.value)} disabled={busy}/></label><label>Unit price (₱)<input type="number" required min="0" max="100000000" step="0.01" value={editPrice} onChange={e=>setEditPrice(e.target.value)} disabled={busy}/></label><div className="stock-dialog-actions"><button type="button" className="stock-dialog-cancel" onClick={()=>setProductEditor(undefined)} disabled={busy}>Cancel</button><button type="submit" disabled={busy}>{busy?'Saving...':'Save Product'}</button></div></form></div></div>}
    {showMovement&&<div className="inventory-modal-backdrop" role="presentation" onClick={()=>{if(!busy)setShowMovement(false)}}><div className="inventory-modal inventory-stock-dialog" role="dialog" aria-modal="true" aria-label="Stock In or Out" onClick={e=>e.stopPropagation()}>
    <div className="stock-dialog-header"><div><h2>Stock In / Stock Out</h2><p className="stock-dialog-note">Record stock received or issued. For opening balances, use reason &quot;Verified opening stock count&quot;. Use Stock Requests for branch transfers.</p></div><button className="stock-dialog-close" type="button" onClick={()=>setShowMovement(false)} disabled={busy} aria-label="Close">✕</button></div>
    
