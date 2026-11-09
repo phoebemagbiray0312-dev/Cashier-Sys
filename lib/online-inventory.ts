@@ -40,12 +40,15 @@ export async function recordStockMovement(input: {
   if (error) throw new Error('Stock operation failed. Check role, branch, SKU, and available stock.');
   return data as Record<string, unknown>;
 }
-export async function listStockMovements(branchId?: string): Promise<StockMovement[]> {
+export async function listStockMovements(branchId?: string, startDate?: string, endDate?: string, type?: 'all'|'issue'): Promise<StockMovement[]> {
   if (!await getCurrentStaff()) throw new Error('Active staff login required.');
   let query = getSupabaseClient().from('cms_stock_movements')
     .select('id,product_id,branch_id,movement_type,quantity_delta,quantity_before,quantity_after,reason,transfer_group,performed_by,created_at')
-    .order('created_at', { ascending: false }).limit(200);
+    .order('created_at', { ascending: false }).limit(1000);
   if (branchId) query = query.eq('branch_id', branchId);
+  if (startDate) query = query.gte('created_at',new Date(startDate+'T00:00:00+08:00').toISOString());
+  if (endDate) query = query.lt('created_at',new Date(new Date(endDate+'T00:00:00+08:00').getTime()+86400000).toISOString());
+  if (type==='issue') query = query.eq('movement_type','issue');
   const {data,error} = await query;
   if (error) throw new Error('Could not load stock history.');
   return (data ?? []) as StockMovement[];
