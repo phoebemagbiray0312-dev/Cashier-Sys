@@ -6,6 +6,7 @@ import {getSupabaseClient} from '@/lib/supabase-client';
 import {listOnlineProducts,type OnlineProduct} from '@/lib/online-cashier';
 import {listStockMovements,recordStockMovement,type StockMovement,type StockOperation} from '@/lib/online-inventory';
 
+function productCategory(name:string):string{const s=name.toUpperCase();if(/FILTER|OFLAZ|FLFAZ|FLFT/.test(s))return 'Filters';if(/COOLANT|RADIATOR/.test(s))return 'Coolant';if(/ATF|CVTF|DCTF|TRANSMISSION|DEXRON|DEXTRON|MERCON/.test(s))return 'Transmission Fluids';if(/ENGINE OIL|MOTOR OIL|SYNTHETIC|SAE |MOBIL 1|AMSOIL|LUBRICANT|10W|5W|0W/.test(s))return 'Engine Oil';if(/BRAKE FLUID|DOT 3|DOT 4|PSF|POWER STEERING/.test(s))return 'Brake & Steering Fluids';if(/CLEANER|FLUSHING|DEGREASER|CAR SHAMPOO|FOAM|WD-40/.test(s))return 'Cleaning & Chemicals';if(/SEALANT|SILICON|SHELLAC|BOND|ADHESIVE/.test(s))return 'Sealants & Adhesives';return 'Other / Unclassified';}
 const branches = ['UCQC','UCM','UCLP','MMM'];
 const branchNames:Record<string,string>={UCQC:'Underchargers Quezon City',UCM:'Underchargers Mandaluyong',UCLP:'Underchargers Las Piñas',MMM:'Mastermind Mandaluyong'};
 export default function OnlineInventoryPage(){
@@ -29,6 +30,7 @@ export default function OnlineInventoryPage(){
  const [message,setMessage]=useState('Checking Supabase access...');
  const [busy,setBusy]=useState(false);
  const [search,setSearch]=useState('');
+ const [categoryFilter,setCategoryFilter]=useState('All Categories');
  const [page,setPage]=useState(1);
  const [showHistory,setShowHistory]=useState(false);
  const [historyFrom,setHistoryFrom]=useState('');
@@ -74,7 +76,7 @@ export default function OnlineInventoryPage(){
  },[]);
  async function changeBranch(value:string){
   if(staff?.role!=='admin'&&value!==staff?.branch)return;
-  setBranch(value);setMessage('Loading inventory...');
+  setBranch(value);setCategoryFilter('All Categories');setPage(1);setMessage('Loading inventory...');
   try{await refresh(value);setMessage('Inventory loaded.');}catch{setMessage('Could not load inventory.');}
  }
  async function submit(e:React.FormEvent){
@@ -111,7 +113,8 @@ export default function OnlineInventoryPage(){
   }catch(err){setMessage(err instanceof Error?err.message:'Could not save product.');}
   finally{setBusy(false);}
  }
- const filtered=products.filter(p=>(stockFilter==='all'||Number(p.stock_qty)===0)&&(p.name+' '+p.sku).toLowerCase().includes(search.toLowerCase().trim()));
+ const categories=Array.from(new Set(products.map(p=>productCategory(p.name)))).sort();
+ const filtered=products.filter(p=>(stockFilter==='all'||Number(p.stock_qty)===0)&&(categoryFilter==='All Categories'||productCategory(p.name)===categoryFilter)&&(p.name+' '+p.sku).toLowerCase().includes(search.toLowerCase().trim()));
  const pageCount=Math.max(1,Math.ceil(filtered.length/10));
  const visible=filtered.slice((Math.min(page,pageCount)-1)*10,Math.min(page,pageCount)*10);
  async function loadFilteredHistory(from=historyFrom,to=historyTo,type=historyType){if(from&&to&&from>to){setMessage('Start date must be before end date.');return;}setHistoryLoading(true);try{setHistoryResults(await listStockMovements(branch,from,to,type));}catch{setMessage('Unable to load filtered history.');}finally{setHistoryLoading(false);}}
@@ -135,10 +138,10 @@ export default function OnlineInventoryPage(){
     <div className="inventory-requests-heading"><div><h3>Recent Stock Requests</h3><p>Latest inter-branch transfer requests and their status</p></div><div className="inventory-request-actions"><a href="/stock-requests?embedded=1&mode=history">View All Requests →</a><a href="/stock-requests?embedded=1&mode=new" className="inventory-request-new">+ New Stock Request</a></div></div>
     {recentRequests.length===0?<div className="inventory-requests-empty">No stock requests yet. New requests will appear here.</div>:<div className="inventory-requests-list">{recentRequests.map(req=><div key={req.id} className="inventory-request-row"><div><strong>{req.product_name}</strong><span>{req.quantity} units · {req.from_branch} → {req.to_branch} · {new Date(req.created_at).toLocaleString('en-PH',{timeZone:'Asia/Manila'})}</span></div><span className="inventory-request-status">{req.status}</span></div>)}</div>}
    </section>
-   <section className="inventory-products-panel"><div className="inventory-products-header"><div><h3>Product Inventory</h3><p>Manage and monitor products per branch.</p></div><label>Branch <select value={branch} onChange={e=>void changeBranch(e.target.value)} disabled={busy}>{branches.filter(b=>staff.role==='admin'||b===staff.branch).map(b=><option key={b} value={b}>{branchNames[b]}</option>)}</select></label></div>
+   <section className="inventory-products-panel"><div className="inventory-products-header"><div><h3>Product Inventory</h3><p>Manage products per branch and browse by suggested category. Categories are based on product names and can be reviewed.</p></div><label>Branch <select value={branch} onChange={e=>void changeBranch(e.target.value)} disabled={busy}>{branches.filter(b=>staff.role==='admin'||b===staff.branch).map(b=><option key={b} value={b}>{branchNames[b]}</option>)}</select></label></div>
    <div className="inventory-toolbar">{staff.role==='admin'&&<button type="button" onClick={()=>openProductEditor()}>+ Add Product</button>}<button type="button" onClick={()=>setShowMovement(true)} disabled={!products.length}>+ Stock Movement</button><button type="button" className="inventory-zero-filter" aria-pressed={stockFilter==='zero'} onClick={()=>{setStockFilter(stockFilter==='zero'?'all':'zero');setPage(1)}}>{stockFilter==='zero'?'Show All Products':'Zero Balance ('+products.filter(p=>Number(p.stock_qty)===0).length+')'}</button></div>
-   <div className="inventory-toolbar"><input aria-label="Search products" placeholder="Search products by name or SKU" value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}}/></div>
-   <div className="inventory-table-wrap"><table><thead><tr><th>SKU</th><th>Product</th><th>Available</th><th>Price</th><th>Action</th></tr></thead><tbody>{visible.map(p=><tr key={p.id}><td>{p.sku}</td><td>{p.name}</td><td>{p.stock_qty}</td><td>{Number(p.unit_price)===0?'Not set':'₱'+Number(p.unit_price).toFixed(2)}</td><td><button type="button" onClick={()=>openStock(p)} aria-label={'Update stock for '+p.name} title="Stock In / Out" className="inventory-icon-action"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="3"/><path d="M8 9h8M12 7v4M8 15h8"/></svg></button>{staff.role==='admin'&&<button type="button" onClick={()=>openProductEditor(p)} aria-label={'Edit product '+p.name} title="Edit product details" className="inventory-icon-action" style={{marginLeft:6}}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4Z"/></svg></button>}</td></tr>)}</tbody></table></div>
+   <div className="inventory-toolbar"><select aria-label="Filter inventory by category" value={categoryFilter} onChange={e=>{setCategoryFilter(e.target.value);setPage(1)}}><option>All Categories</option>{categories.map(cat=><option key={cat}>{cat}</option>)}</select><input aria-label="Search products" placeholder="Search products by name or SKU" value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}}/></div>
+   <div className="inventory-table-wrap"><table><thead><tr><th>SKU</th><th>Product</th><th>Category</th><th>Available</th><th>Price</th><th>Action</th></tr></thead><tbody>{visible.map(p=><tr key={p.id}><td>{p.sku}</td><td>{p.name}</td><td>{productCategory(p.name)}</td><td>{p.stock_qty}</td><td>{Number(p.unit_price)===0?'Not set':'₱'+Number(p.unit_price).toFixed(2)}</td><td><button type="button" onClick={()=>openStock(p)} aria-label={'Update stock for '+p.name} title="Stock In / Out" className="inventory-icon-action"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="3"/><path d="M8 9h8M12 7v4M8 15h8"/></svg></button>{staff.role==='admin'&&<button type="button" onClick={()=>openProductEditor(p)} aria-label={'Edit product '+p.name} title="Edit product details" className="inventory-icon-action" style={{marginLeft:6}}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4Z"/></svg></button>}</td></tr>)}</tbody></table></div>
    <div className="inventory-toolbar"><button type="button" disabled={page<=1} onClick={()=>setPage(p=>p-1)}>Previous</button><span style={{fontSize:13}}>Page {Math.min(page,pageCount)} of {pageCount}</span><button type="button" disabled={page>=pageCount} onClick={()=>setPage(p=>p+1)}>Next</button></div>
    {products.length===0&&<p>No online products for this branch yet. An Admin must register a product before stock movements can be recorded.</p>}
    </section>
