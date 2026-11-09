@@ -10,6 +10,7 @@ import BulkScanRegistration from '@/components/BulkScanRegistration';
 import PriceConfiguration from '@/components/PriceConfiguration';
 import StockScanPanel from '@/components/StockScanPanel';
 import InventoryReview from '@/components/InventoryReview';
+import OnlineInventoryPage from './online-inventory/page';
 import {BEGINNING_INVENTORY_REFERENCE} from '@/lib/beginning-inventory-reference';
 import TerminalTracker from '@/components/TerminalTracker';
 import DisbursementWorkspace from '@/components/DisbursementWorkspace';
@@ -694,7 +695,7 @@ export default function Home(){
   {view==='pos'&&renderPosList()}
   {view==='disbursements'&&<DisbursementWorkspace db={db} user={user} currentBranch={currentBranch} adminBranch={selectedBranch} canTransact={!locked&&!bodGate} onUpdate={next=>{if(!storeDB(next))return false;update(()=>next);return true;}} notify={notify}/>}
   {view==='terminal'&&<TerminalTracker db={db} user={user} branch={selectedBranch} canRecord={!locked&&!bodGate} onUpdate={next=>update(()=>next)} notify={notify}/>}
-  {view==='inventory'&&<section className="panel" style={{padding:0,overflow:'hidden'}}><iframe title="Online Inventory" src="/online-inventory?embedded=1" style={{width:'100%',height:'min(1500px,calc(100vh - 240px))',minHeight:850,border:0,display:'block'}}/></section>}
+  {view==='inventory'&&<section className="panel" style={{padding:0,overflow:'hidden'}}><OnlineInventoryPage embeddedMode /></section>}
   {view==='po'&&user?.role==='cashier'&&<RFPReconciliation purchases={db.fundEntries} role={user.role} branch={currentBranch} user={user.name}/>}
   {view==='cash'&&<>
     <div className="cash-grid"><section className="panel"><div className="panel-head"><div><h3>Daily Cash Count</h3><span>BOD due 9 AM · EOD opens 4 PM · EOD and Sales Turnover due 6 PM</span></div><StatusPill status={todayCounts.some(c=>c.kind==='BOD')&&todayCounts.some(c=>c.kind==='EOD')?'Completed':'Pending'}/></div><div className="cashcount-tiles">{(['BOD','EOD'] as const).map(kind=>{const record=todayCounts.find(c=>c.kind===kind);return <div key={kind} className="cashcount-tile"><div className="cashcount-icon">{kind==='BOD'?<ArrowDownLeft size={20}/>:<ArrowUpRight size={20}/>}</div><strong>{kind==='BOD'?'Opening Cash Count':'Closing Cash Count'}</strong><small>{kind==='BOD'?'Due by 9:00 AM':'Alert at 4:00 PM · Due by 6:00 PM'}</small><div className="cashcount-result">{record?<><b>{pesos(record.actual)}</b><StatusPill status="Submitted"/></>:<span className="muted">Not submitted</span>}</div><button className={`button ${record?'button-secondary':'button-primary'} full`} disabled={!!record||!!locked||(kind==='EOD'&&timeMinutesPH()<16*60)} onClick={()=>openCount(kind)}>{record?'Already Submitted':kind==='EOD'&&timeMinutesPH()<16*60?'Opens at 4:00 PM':`Submit ${kind}`}</button></div>})}</div><p className="panel-hint"><AlertCircle size={15}/> The first recorded BOD establishes a starting cash baseline. Later expectations use previous EOD and same-day cash sales.</p></section>
