@@ -1,6 +1,7 @@
 'use client';
 
 import {useEffect,useState} from 'react';
+import HistoricalInventory from '@/components/HistoricalInventory';
 import {getCurrentStaff,type StaffIdentity} from '@/lib/supabase-auth';
 import {getSupabaseClient} from '@/lib/supabase-client';
 import {listOnlineProducts,type OnlineProduct} from '@/lib/online-cashier';
@@ -138,6 +139,7 @@ export default function OnlineInventoryWorkspace({embeddedMode=false}:{embeddedM
     <div className="inventory-requests-heading"><div><h3>Recent Stock Requests</h3><p>Latest inter-branch transfer requests and their status</p></div><div className="inventory-request-actions"><a href="/stock-requests?embedded=1&mode=history">View All Requests →</a><a href="/stock-requests?embedded=1&mode=new" className="inventory-request-new">+ New Stock Request</a></div></div>
     {recentRequests.length===0?<div className="inventory-requests-empty">No stock requests yet. New requests will appear here.</div>:<div className="inventory-requests-list">{recentRequests.map(req=><div key={req.id} className="inventory-request-row"><div><strong>{req.product_name}</strong><span>{req.quantity} units · {req.from_branch} → {req.to_branch} · {new Date(req.created_at).toLocaleString('en-PH',{timeZone:'Asia/Manila'})}</span></div><span className="inventory-request-status">{req.status}</span></div>)}</div>}
    </section>
+   <HistoricalInventory branch={branch} admin={staff.role==='admin'} />
    <section className="inventory-products-panel"><div className="inventory-products-header"><div><h3>Product Inventory</h3><p>Manage products per branch and browse by suggested category. Categories are based on product names and can be reviewed.</p></div><label>Branch <select value={branch} onChange={e=>void changeBranch(e.target.value)} disabled={busy}>{branches.filter(b=>staff.role==='admin'||b===staff.branch).map(b=><option key={b} value={b}>{branchNames[b]}</option>)}</select></label></div>
    <div className="inventory-toolbar">{staff.role==='admin'&&<button type="button" onClick={()=>openProductEditor()}>+ Add Product</button>}<button type="button" onClick={()=>setShowMovement(true)} disabled={!products.length}>+ Stock Movement</button><button type="button" className="inventory-zero-filter" aria-pressed={stockFilter==='zero'} onClick={()=>{setStockFilter(stockFilter==='zero'?'all':'zero');setPage(1)}}>{stockFilter==='zero'?'Show All Products':'Zero Balance ('+products.filter(p=>Number(p.stock_qty)===0).length+')'}</button></div>
    <div className="inventory-toolbar"><select aria-label="Filter inventory by category" value={categoryFilter} onChange={e=>{setCategoryFilter(e.target.value);setPage(1)}}><option>All Categories</option>{categories.map(cat=><option key={cat}>{cat}</option>)}</select><input aria-label="Search products" placeholder="Search products by name or SKU" value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}}/></div>
