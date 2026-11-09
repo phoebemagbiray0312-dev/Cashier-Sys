@@ -9,7 +9,7 @@ import {listStockMovements,recordStockMovement,type StockMovement,type StockOper
 
 function productCategory(name:string):string{const s=name.toUpperCase();if(/FILTER|OFLAZ|FLFAZ|FLFT/.test(s))return 'Filters';if(/COOLANT|RADIATOR/.test(s))return 'Coolant';if(/ATF|CVTF|DCTF|TRANSMISSION|DEXRON|DEXTRON|MERCON/.test(s))return 'Transmission Fluids';if(/ENGINE OIL|MOTOR OIL|SYNTHETIC|SAE |MOBIL 1|AMSOIL|LUBRICANT|10W|5W|0W/.test(s))return 'Engine Oil';if(/BRAKE FLUID|DOT 3|DOT 4|PSF|POWER STEERING/.test(s))return 'Brake & Steering Fluids';if(/CLEANER|FLUSHING|DEGREASER|CAR SHAMPOO|FOAM|WD-40/.test(s))return 'Cleaning & Chemicals';if(/SEALANT|SILICON|SHELLAC|BOND|ADHESIVE/.test(s))return 'Sealants & Adhesives';return 'Other / Unclassified';}
 const branches = ['UCQC','UCM','UCLP','MMM'];
-const branchNames:Record<string,string>={UCQC:'Underchargers Quezon City',UCM:'Underchargers Mandaluyong',UCLP:'Underchargers Las Piñas',MMM:'Mastermind Mandaluyong'};
+const branchNames:Record<string,string>={UCQC:'UC Quezon City',UCM:'UC Mandaluyong',UCLP:'UC Las Piñas',MMM:'Mastermind Autoworks'};
 export default function OnlineInventoryWorkspace({embeddedMode=false}:{embeddedMode?:boolean}){
  const [embedded,setEmbedded]=useState(embeddedMode);
  const [staff,setStaff]=useState<StaffIdentity|null>(null);
