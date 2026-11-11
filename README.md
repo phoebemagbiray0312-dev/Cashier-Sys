@@ -1,3 +1,5 @@
+> 📘 **Code Guide:** see [`docs/CODE-GUIDE.md`](docs/CODE-GUIDE.md) for where each part of the system lives (POS, funds, staff accounts, database rules).
+
 ## v9.28 — All cashier records saved online (November 2026)
 
 Funds (RF/RFP), disbursement requests, cash counts, turnovers, incidents, approval requests, terminal events/settlements, stock requests, the audit log and Settings are now stored in Supabase (`public.cms_records`, migration `supabase/migrations/20261111_online_records.sql`, client `lib/record-sync.ts`).
