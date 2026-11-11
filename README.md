@@ -1,3 +1,12 @@
+## v9.28 — All cashier records saved online (November 2026)
+
+Funds (RF/RFP), disbursement requests, cash counts, turnovers, incidents, approval requests, terminal events/settlements, stock requests, the audit log and Settings are now stored in Supabase (`public.cms_records`, migration `supabase/migrations/20261111_online_records.sql`, client `lib/record-sync.ts`).
+
+- `cms_save_record` enforces: active staff only; branch access; only Admin can approve/reject/verify, move records between branches, change Settings or delete (soft delete); audit is append-only; version checks stop silent overwrites.
+- Read access: branch records by branch; audit by Admin only; Settings by all active staff.
+- Browser-only records found at sign-in are not uploaded; a copy is kept in `localStorage` key `uc_local_records_backup_v928`.
+- The browser still keeps a cache copy; staff accounts, POS & Sales, inventory and all records above are online.
+
 ## v9.26 — POS & Sales saved online (November 2026)
 
 POS & Sales records now live in Supabase instead of the browser. After staff sign-in, the app loads POS from `cms_sales.payload` and saves every POS change through the `cms_save_pos` / `cms_delete_pos_draft` RPCs (`lib/pos-sync.ts`, migration `supabase/migrations/20261109_pos_online_sales.sql`).
