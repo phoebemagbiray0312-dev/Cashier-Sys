@@ -192,3 +192,6 @@
 .account-file{position:relative;overflow:hidden;cursor:pointer}
 .account-file input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 @media(max-width:640px){.account-pw-pair{grid-template-columns:1fr}.account-pw-actions .button,.account-backup-actions .button{width:100%}}
+
+/* v9.29.1 — Approvals summary: four cards in one row on desktop */
+@media(min-width:900px){.approval-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}

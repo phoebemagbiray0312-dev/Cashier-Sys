@@ -4,6 +4,7 @@ import {ArrowLeft,FileSpreadsheet,FileText,House,Lock} from 'lucide-react';
 import {loadDB,BRANCHES,BRANCH_NAME,type Database,type BranchId,type User} from '@/lib/data';
 import {studioSources,studioHomeHref,type StudioKind} from '@/lib/report-studio';
 import ReportStudio from '@/components/ReportStudio';
+import {getSignedInAppUser} from '@/lib/supabase-auth';
 
 /** Separate Next.js page: same-origin browser storage and active Cashier System session. */
 export default function StudioRoute({kind,fileId}:{kind:StudioKind;fileId?:string}){
@@ -13,8 +14,10 @@ export default function StudioRoute({kind,fileId}:{kind:StudioKind;fileId?:strin
  const [branch,setBranch]=useState<BranchId|'ALL'>('ALL');
  const [fromDate,setFromDate]=useState(''),[toDate,setToDate]=useState('');
  useEffect(()=>{
-  const stored=loadDB();const session=sessionStorage.getItem('uc_fund_session');
-  setDb(stored);setUser(stored.users.find(u=>u.id===session&&u.active)||null);setReady(true);
+  // v9.29.1: use the real Supabase staff session, not the old browser-only login.
+  const stored=loadDB();let mounted=true;
+  getSignedInAppUser().then(u=>{if(!mounted)return;setDb(u?{...stored,users:[...stored.users.filter(x=>x.id!==u.id),u]}:stored);setUser(u);}).catch(()=>{if(mounted){setDb(stored);setUser(null);}}).finally(()=>{if(mounted)setReady(true);});
+  return()=>{mounted=false;};
  },[]);
  const branchScope=user?.role==='admin'?branch:user?.branch||'UCM';
  const sourceList=db&&user?studioSources(db,user.role,user.branch,branchScope,fromDate,toDate):[];

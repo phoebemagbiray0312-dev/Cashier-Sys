@@ -96,3 +96,13 @@ export async function changeStaffPassword(currentPassword: string, newPassword: 
     throw new Error('Password could not be changed. Please try again.');
   }
 }
+
+/** v9.29.1: The signed-in Supabase staff member as the app's User shape (for Sheets, Docs, Suppliers). */
+export async function getSignedInAppUser(): Promise<import('./data').User | null> {
+  const staff = await getCurrentStaff();
+  if (!staff) return null;
+  return {
+    id: 'supabase:' + staff.id, username: staff.email, name: staff.displayName, password: '',
+    role: staff.role, branch: staff.branch || 'UCM', active: true,
+  };
+}
