@@ -149,7 +149,7 @@ export async function updateMyProfile(displayName: string, picture: File | null 
   // Remove older pictures in this user's folder (best effort).
   const { data: files } = await supabase.storage.from('avatars').list(current.id);
   const keep = avatarUrl ? avatarUrl.split('/').pop() : '';
-  const stale = (files || []).map(f => `${current.id}/${f.name}`).filter(p => !p.endsWith('/' + keep));
+  const stale = ((files || []) as { name: string }[]).map((f: { name: string }) => `${current.id}/${f.name}`).filter((p: string) => !p.endsWith('/' + keep));
   if (stale.length) await supabase.storage.from('avatars').remove(stale);
   const updated = await getCurrentStaff();
   if (!updated) throw new Error('Your session has expired. Sign in again.');
