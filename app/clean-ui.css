@@ -249,3 +249,24 @@
   aside.sidebar.sidebar-open .side-brand > .brand-logo-responsive { width:100%; height:auto; }
   aside.sidebar.sidebar-open .side-brand .brand-logo-responsive > .brand-symbol-wrap { display:none; }
 }
+
+/* v9.31.2 — Account menu (avatar) and hover labels on the tablet rail */
+.avatar-menu-scrim{position:fixed;inset:0;background:transparent;border:0;z-index:58;cursor:default}
+.avatar-menu{position:fixed;z-index:59;min-width:200px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 40px rgba(16,18,22,.16);padding:6px;display:flex;flex-direction:column}
+.avatar-menu-top{top:62px;right:18px}
+.avatar-menu-side{left:16px;bottom:78px}
+.avatar-menu-head{padding:8px 10px 8px;border-bottom:1px solid var(--line);margin-bottom:4px;display:flex;flex-direction:column;gap:2px}
+.avatar-menu-head strong{font-size:13px}
+.avatar-menu-head span{font-size:11px;color:#777d88}
+.avatar-menu button[role=menuitem]{display:flex;align-items:center;gap:9px;border:0;background:none;padding:9px 10px;border-radius:8px;font-size:13px;font-weight:600;color:#1d2023;cursor:pointer;text-align:left}
+.avatar-menu button[role=menuitem]:hover{background:#f5f6f8}
+.avatar-menu button[role=menuitem].danger{color:#b42318}
+.avatar-menu button[role=menuitem].danger:hover{background:#fef3f2}
+.rail-tip{display:none}
+@media screen and (min-width: 700px) and (max-width: 1100px) {
+  aside.sidebar:not(.sidebar-open) .side-logout { display:none; }
+  .avatar-menu-side{left:80px;bottom:16px}
+  .rail-tip{display:block;position:fixed;left:82px;transform:translateY(-50%);background:#1d2023;color:#fff;font-size:12px;font-weight:600;padding:6px 10px;border-radius:8px;white-space:nowrap;pointer-events:none;z-index:60;box-shadow:0 6px 18px rgba(16,18,22,.18)}
+  .rail-tip::before{content:"";position:absolute;left:-4px;top:50%;width:8px;height:8px;background:#1d2023;transform:translateY(-50%) rotate(45deg)}
+}
+@media screen and (max-width: 699px){ .avatar-menu-top{top:58px;right:12px} .avatar-menu-side{left:12px;bottom:84px} }
