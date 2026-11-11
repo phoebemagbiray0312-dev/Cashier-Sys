@@ -1,4 +1,4 @@
-# Code Guide — Saan makikita ang code (v9.26 – v9.30)
+# Code Guide — Saan makikita ang code (v9.26 – v9.31)
 
 Gabay ito sa mga binago noong **Nov 9–11, 2026** para makita mo kung saan nakalagay ang bawat bahagi ng system.
 Puwede mong buksan ang bawat file sa GitHub: `https://github.com/phoebemagbiray0312-dev/Cashier-Sys/blob/main/<path>`
@@ -89,6 +89,19 @@ Kasama: RF/RFP fund entries, disbursement requests, cash counts, turnovers, inci
 | App: pag-load at pag-save | `lib/supplier-online.ts` |
 | Supplier Management screen | `app/supplier-controls/page.tsx` → `reload`, `submit`, `decide`, `addCatalogItem` |
 | Inventory sumusunod sa branch sa itaas (Admin) | `components/OnlineInventoryWorkspace.tsx` → prop `pageBranch` |
+
+---
+
+## 7. Sidebar sa tablet + My Profile — v9.31
+
+| Ano | Saan |
+|---|---|
+| Sidebar sa tablet (700–1100px): logo, scroll, ☰ para buksan ang buong menu | `app/clean-ui.css` → hanapin `v9.31 — Tablet navigation rail` |
+| Database: `avatar_url`, storage bucket `avatars` (bawat user sariling folder lang), `cms_update_my_profile` | `supabase/migrations/20261111_staff_profile.sql` |
+| Pag-upload ng picture (ginagawang 256×256 WebP) at pag-save ng pangalan | `lib/supabase-auth.ts` → `updateMyProfile` |
+| My Profile dialog + `StaffAvatar` (bilog na picture o unang letra) | `components/ProfileDialog.tsx` |
+| Pagbukas ng dialog (pindutin ang avatar sa itaas o sa sidebar) | `app/page.tsx` → hanapin `setProfileOpen(true)` |
+| Picture sa User Management | `components/StaffManagement.tsx`, `app/api/admin/staff/route.ts` |
 
 ---
 

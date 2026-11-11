@@ -10,6 +10,8 @@ export interface StaffIdentity {
   branch: StaffBranch | null;
   /** v9.29: owner account — Settings, deleting records, audit log, Admin accounts. */
   superAdmin: boolean;
+  /** v9.31: profile picture (public URL) or null. */
+  avatarUrl: string | null;
 }
 
 function validRole(value: unknown): value is StaffRole {
@@ -25,7 +27,7 @@ export async function getCurrentStaff(): Promise<StaffIdentity | null> {
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError || !auth.user) return null;
   const { data, error } = await supabase.from('cms_profiles')
-    .select('user_id,display_name,role,branch_id,active,is_super_admin')
+    .select('user_id,display_name,role,branch_id,active,is_super_admin,avatar_url')
     .eq('user_id', auth.user.id).maybeSingle();
   if (error || !data || !data.active || !validRole(data.role)) return null;
   if (data.role === 'cashier' && !validBranch(data.branch_id)) return null;
@@ -37,6 +39,7 @@ export async function getCurrentStaff(): Promise<StaffIdentity | null> {
     role: data.role,
     branch: data.branch_id,
     superAdmin: data.role === 'admin' && data.is_super_admin === true,
+    avatarUrl: data.avatar_url || null,
   };
 }
 
@@ -105,4 +108,50 @@ export async function getSignedInAppUser(): Promise<import('./data').User | null
     id: 'supabase:' + staff.id, username: staff.email, name: staff.displayName, password: '',
     role: staff.role, branch: staff.branch || 'UCM', active: true,
   };
+}
+
+/** v9.31: Shrinks a picture to a 256×256 square WebP before upload (keeps files small). */
+async function squareWebp(file: File): Promise<Blob> {
+  if (!/^image\/(png|jpeg|webp)$/.test(file.type)) throw new Error('Choose a PNG, JPG or WebP picture.');
+  if (file.size > 8 * 1024 * 1024) throw new Error('Picture is too large (max 8 MB).');
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image(); i.onload = () => resolve(i); i.onerror = () => reject(new Error('Could not read that picture.')); i.src = url;
+    });
+    const side = Math.min(img.naturalWidth, img.naturalHeight);
+    const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256;
+    const ctx = canvas.getContext('2d'); if (!ctx) throw new Error('Could not process the picture.');
+    ctx.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 256, 256);
+    return await new Promise<Blob>((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error('Could not process the picture.')), 'image/webp', 0.86));
+  } finally { URL.revokeObjectURL(url); }
+}
+
+/**
+ * v9.31: Updates the signed-in user's own name and picture.
+ * `picture`: a new File to upload, `null` to remove, or `undefined` to keep the current one.
+ */
+export async function updateMyProfile(displayName: string, picture: File | null | undefined): Promise<StaffIdentity> {
+  const supabase = getSupabaseClient();
+  const current = await getCurrentStaff();
+  if (!current) throw new Error('Your session has expired. Sign in again.');
+  let avatarUrl = current.avatarUrl;
+  if (picture === null) avatarUrl = null;
+  if (picture) {
+    const blob = await squareWebp(picture);
+    const path = `${current.id}/avatar-${Date.now()}.webp`;
+    const { error: upErr } = await supabase.storage.from('avatars').upload(path, blob, { contentType: 'image/webp', upsert: false });
+    if (upErr) throw new Error('Could not upload the picture. Please try again.');
+    avatarUrl = supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+  }
+  const { error } = await supabase.rpc('cms_update_my_profile', { p_display_name: displayName, p_avatar_url: avatarUrl });
+  if (error) throw new Error((error.message || 'Profile could not be saved.').replace(/^PRO_[A-Z_]+:\s*/, ''));
+  // Remove older pictures in this user's folder (best effort).
+  const { data: files } = await supabase.storage.from('avatars').list(current.id);
+  const keep = avatarUrl ? avatarUrl.split('/').pop() : '';
+  const stale = (files || []).map(f => `${current.id}/${f.name}`).filter(p => !p.endsWith('/' + keep));
+  if (stale.length) await supabase.storage.from('avatars').remove(stale);
+  const updated = await getCurrentStaff();
+  if (!updated) throw new Error('Your session has expired. Sign in again.');
+  return updated;
 }

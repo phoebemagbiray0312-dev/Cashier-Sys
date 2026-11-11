@@ -29,7 +29,7 @@ async function context(request: NextRequest) {
 export async function GET(request: NextRequest) {
  const ctx=await context(request);
  if(!ctx)return fail('Admin authentication required.',403);
- const {data,error}=await ctx.admin.from('cms_profiles').select('user_id,username,display_name,role,branch_id,active,created_at,is_super_admin').order('created_at',{ascending:false});
+ const {data,error}=await ctx.admin.from('cms_profiles').select('user_id,username,display_name,role,branch_id,active,created_at,is_super_admin,avatar_url').order('created_at',{ascending:false});
  if(error)return fail('Unable to load staff accounts.',500);
  const staff=await Promise.all((data||[]).map(async row=>{const {data:authData}=await ctx.admin.auth.admin.getUserById(row.user_id);return {...row,email:authData.user?.email||''};}));
  return NextResponse.json({staff,me:{superAdmin:ctx.superAdmin}}, {headers:noStore});
