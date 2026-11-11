@@ -373,3 +373,6 @@
 .sup-actions{flex-wrap:nowrap}
 .sup-table td .sup-by{white-space:nowrap}
 @media(max-width:1100px){.sup-actions{flex-wrap:wrap}}
+.sup-btn-icon{width:32px;padding:0;justify-content:center}
+.sup-table td:first-child{min-width:170px}
+.sup-table td,.sup-table th{padding-left:12px;padding-right:12px}

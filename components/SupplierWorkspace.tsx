@@ -88,9 +88,9 @@ export default function SupplierWorkspace({ embedded = false }: { embedded?: boo
 
   const actions = (s: OnlineSupplier, compact = true) => <div className="sup-actions">
     {compact && <button type="button" className="sup-btn" onClick={() => { setSelected(s.id); setTab('items'); window.scrollTo(0, 0); }}>View</button>}
-    {canEdit(s) && <button type="button" className="sup-btn" onClick={() => startEdit(s)} title="Edit name and contact"><Pencil size={13} /> Edit</button>}
-    {role === 'admin' && s.status !== 'Verified' && <button type="button" className="sup-btn sup-btn-ok" disabled={busy} onClick={() => run(() => reviewSupplier(s.id, true), `${s.name} approved.`)}><Check size={13} /> Approve</button>}
-    {role === 'admin' && s.status !== 'Flagged' && <button type="button" className="sup-btn sup-btn-warn" disabled={busy} onClick={() => run(() => reviewSupplier(s.id, false), `${s.name} flagged.`)}><Flag size={13} /> Flag</button>}
+    {canEdit(s) && <button type="button" className={'sup-btn' + (compact ? ' sup-btn-icon' : '')} onClick={() => startEdit(s)} title="Edit name and contact" aria-label={`Edit ${s.name}`}><Pencil size={13} />{!compact && ' Edit'}</button>}
+    {role === 'admin' && s.status !== 'Verified' && <button type="button" className={'sup-btn sup-btn-ok' + (compact ? ' sup-btn-icon' : '')} title="Approve (mark Verified)" aria-label={`Approve ${s.name}`} disabled={busy} onClick={() => run(() => reviewSupplier(s.id, true), `${s.name} approved.`)}><Check size={13} />{!compact && ' Approve'}</button>}
+    {role === 'admin' && s.status !== 'Flagged' && <button type="button" className={'sup-btn sup-btn-warn' + (compact ? ' sup-btn-icon' : '')} title="Flag supplier" aria-label={`Flag ${s.name}`} disabled={busy} onClick={() => run(() => reviewSupplier(s.id, false), `${s.name} flagged.`)}><Flag size={13} />{!compact && ' Flag'}</button>}
   </div>;
 
   if (!ready) return <div className="sup-wrap"><p className="sup-muted">Loading suppliers…</p></div>;
