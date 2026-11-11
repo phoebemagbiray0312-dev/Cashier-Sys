@@ -176,3 +176,19 @@
 @media print {
   .cms-today-strip, .cms-confirm-backdrop, .mobile-bottom-nav, .cms-pos-progress { display:none !important; }
 }
+
+/* v9.27.1 — Settings › Account card */
+.account-card{display:flex;flex-direction:column}
+.account-pw{display:flex;flex-direction:column;gap:14px;padding:16px 20px 0}
+.account-pw-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.account-pw-error{margin:-4px 0 0;color:#b42318;font-size:11px;font-weight:650}
+.account-pw-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.account-check{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:600;color:#525864;cursor:pointer;user-select:none}
+.account-check input{width:15px;height:15px;margin:0;accent-color:#c99a14;cursor:pointer}
+.account-pw-actions .button[disabled]{opacity:.45;cursor:not-allowed}
+.account-divider{height:1px;background:#eef0f3;margin:22px 0 0}
+.account-card .account-sub{padding-bottom:4px;border-bottom:0}
+.account-backup-actions{display:flex;gap:10px;flex-wrap:wrap;padding:10px 20px 0}
+.account-file{position:relative;overflow:hidden;cursor:pointer}
+.account-file input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+@media(max-width:640px){.account-pw-pair{grid-template-columns:1fr}.account-pw-actions .button,.account-backup-actions .button{width:100%}}
