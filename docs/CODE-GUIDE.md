@@ -1,4 +1,4 @@
-# Code Guide — Saan makikita ang code (v9.26 – v9.28)
+# Code Guide — Saan makikita ang code (v9.26 – v9.29)
 
 Gabay ito sa mga binago noong **Nov 9–11, 2026** para makita mo kung saan nakalagay ang bawat bahagi ng system.
 Puwede mong buksan ang bawat file sa GitHub: `https://github.com/phoebemagbiray0312-dev/Cashier-Sys/blob/main/<path>`
@@ -66,14 +66,26 @@ Kasama: RF/RFP fund entries, disbursement requests, cash counts, turnovers, inci
 
 ---
 
+## 5. Super Admin rights — v9.29
+
+| Ano | Saan |
+|---|---|
+| Database: `cms_private.is_super_admin()`; Settings/pagbura = Super Admin lang; audit = Super Admin lang ang nakakakita | `supabase/migrations/20261111_super_admin_rights.sql` |
+| App: alam kung Super Admin ang naka-login | `lib/supabase-auth.ts` → `StaffIdentity.superAdmin` |
+| Settings: "View only" para sa ordinaryong Admin; mga save button nag-che-check | `app/page.tsx` → hanapin `isSuperAdmin` |
+| Audit Trail report: Super Admin lang | `app/page.tsx` → `reportsAvailable`, `printSelectedReport` |
+| Label sa sidebar: "Super Admin" | `app/page.tsx` → hanapin `'Super Admin'` |
+
+---
+
 ## Mga patakarang ipinapatupad ng database
 
 | Patakaran | Saan nakasulat |
 |---|---|
 | Cashier/PB: sariling branch lang | `cms_private.can_access()` — ginagamit sa lahat ng RPC |
 | Admin lang ang mag-approve/reject/verify | `cms_save_record` (v_decided) |
-| Admin lang ang magbago ng Settings at magbura | `cms_save_record`, `cms_delete_record` |
-| Audit log: hindi nababago, Admin lang ang nakakakita | `cms_save_record` + policy `records branch read` |
+| **Super Admin** lang ang magbago ng Settings at magbura | `cms_save_record`, `cms_delete_record` (gamit ang `cms_private.is_super_admin()`) |
+| Audit log: hindi nababago, **Super Admin** lang ang nakakakita | `cms_save_record` + policy `records branch read` |
 | Isang open POS lang kada plate sa lahat ng branch | `cms_save_pos` + index `cms_sales_one_open_per_plate` |
 | Hindi mapapatungan ang edit ng ibang device | column `version` + `p_expected_version` sa bawat RPC |
 

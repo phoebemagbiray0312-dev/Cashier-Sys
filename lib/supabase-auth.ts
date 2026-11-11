@@ -8,6 +8,8 @@ export interface StaffIdentity {
   displayName: string;
   role: StaffRole;
   branch: StaffBranch | null;
+  /** v9.29: owner account — Settings, deleting records, audit log, Admin accounts. */
+  superAdmin: boolean;
 }
 
 function validRole(value: unknown): value is StaffRole {
@@ -23,7 +25,7 @@ export async function getCurrentStaff(): Promise<StaffIdentity | null> {
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError || !auth.user) return null;
   const { data, error } = await supabase.from('cms_profiles')
-    .select('user_id,display_name,role,branch_id,active')
+    .select('user_id,display_name,role,branch_id,active,is_super_admin')
     .eq('user_id', auth.user.id).maybeSingle();
   if (error || !data || !data.active || !validRole(data.role)) return null;
   if (data.role === 'cashier' && !validBranch(data.branch_id)) return null;
@@ -34,6 +36,7 @@ export async function getCurrentStaff(): Promise<StaffIdentity | null> {
     displayName: data.display_name || auth.user.email || 'Staff',
     role: data.role,
     branch: data.branch_id,
+    superAdmin: data.role === 'admin' && data.is_super_admin === true,
   };
 }
 
