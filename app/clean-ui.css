@@ -229,3 +229,23 @@
 .profile-file{position:relative;overflow:hidden;cursor:pointer}
 .profile-file input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 .profile-hint{flex-basis:100%;margin:0;font-size:11px;color:#777d88}
+
+/* v9.31.1 — Cleaner tablet rail: tighter icons, crest logo, no boxed footer */
+@media screen and (min-width: 700px) and (max-width: 1100px) {
+  aside.sidebar:not(.sidebar-open) { width:72px; flex:0 0 72px; }
+  aside.sidebar .side-brand { padding:16px 0 12px; border-bottom:1px solid var(--line); }
+  aside.sidebar .side-brand > .brand-logo-responsive,
+  aside.sidebar .side-brand .brand-logo-responsive > .brand-symbol-wrap { width:40px; height:40px; overflow:visible; }
+  aside.sidebar .side-brand .brand-symbol-img { width:40px !important; height:40px !important; max-width:40px !important; object-fit:contain !important; }
+  aside.sidebar:not(.sidebar-open) .side-nav { padding:10px 0; gap:2px; align-items:center; }
+  aside.sidebar:not(.sidebar-open) .nav-link { width:44px; height:44px; border-radius:12px; margin:0; }
+  aside.sidebar:not(.sidebar-open) .nav-link svg { width:20px; height:20px; }
+  aside.sidebar:not(.sidebar-open) .nav-link.active { background:#fff3bd; box-shadow:inset 0 0 0 1px #f1dc8a; }
+  aside.sidebar:not(.sidebar-open) .sidebar-bottom { padding:10px 0 14px; border-top:1px solid var(--line); }
+  aside.sidebar:not(.sidebar-open) .side-profile { border:0; background:none; padding:0; flex-direction:column; gap:8px; align-items:center; }
+  aside.sidebar:not(.sidebar-open) .side-profile .avatar { width:36px; height:36px; border-radius:999px; }
+  aside.sidebar:not(.sidebar-open) .side-profile .icon-button { width:36px; height:36px; border-radius:10px; }
+  aside.sidebar.sidebar-open .side-brand .brand-full-img { display:block; height:110px; transform:scale(1.35); }
+  aside.sidebar.sidebar-open .side-brand > .brand-logo-responsive { width:100%; height:auto; }
+  aside.sidebar.sidebar-open .side-brand .brand-logo-responsive > .brand-symbol-wrap { display:none; }
+}
