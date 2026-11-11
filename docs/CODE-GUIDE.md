@@ -87,7 +87,8 @@ Kasama: RF/RFP fund entries, disbursement requests, cash counts, turnovers, inci
 | ├ Approve / Flag (Admin lang) | same file → `cms_review_supplier` |
 | └ Magdagdag ng catalog item (PB/Admin) | same file → `cms_add_supplier_item` |
 | App: pag-load at pag-save | `lib/supplier-online.ts` |
-| Supplier Management screen | `app/supplier-controls/page.tsx` → `reload`, `submit`, `decide`, `addCatalogItem` |
+| Supplier Management screen (v9.32: hindi na iframe) | `components/SupplierWorkspace.tsx`; ang `app/supplier-controls/page.tsx` ay wrapper na lang |
+| Edit supplier (Admin: lahat; PB: sariling For Review lang) | `supabase/migrations/20261111_supplier_edit.sql` → `cms_update_supplier` |
 | Inventory sumusunod sa branch sa itaas (Admin) | `components/OnlineInventoryWorkspace.tsx` → prop `pageBranch` |
 
 ---

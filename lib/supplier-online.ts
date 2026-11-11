@@ -3,12 +3,12 @@ import { getSupabaseClient } from './supabase-client';
 /** v9.30 — Supplier master list and supplier catalog stored in Supabase. */
 export type OnlineSupplier = {
   id: string; name: string; phone: string; branch: string;
-  status: 'For Review' | 'Verified' | 'Flagged'; by: string; at: string; reviewedAt: string | null;
+  status: 'For Review' | 'Verified' | 'Flagged'; by: string; at: string; reviewedAt: string | null; createdBy: string | null;
 };
 export type OnlineSupplierItem = { id: string; supplierId: string; name: string; price: number | null; by: string; at: string };
 export type SupplierActivity = { id: string; at: string; by: string; detail: string };
 
-type SupRow = { id: string; name: string; contact: string | null; branch_id: string; status: OnlineSupplier['status']; created_by_name: string | null; created_at: string; reviewed_at: string | null };
+type SupRow = { id: string; name: string; contact: string | null; branch_id: string; status: OnlineSupplier['status']; created_by: string | null; created_by_name: string | null; created_at: string; reviewed_at: string | null };
 type ItemRow = { id: string; supplier_id: string; name: string; price: number | string | null; created_by_name: string | null; created_at: string };
 
 function clean(message?: string) {
@@ -18,13 +18,13 @@ function clean(message?: string) {
 export async function loadSuppliers(): Promise<{ suppliers: OnlineSupplier[]; items: OnlineSupplierItem[]; activity: SupplierActivity[] }> {
   const supabase = getSupabaseClient();
   const [s, i] = await Promise.all([
-    supabase.from('cms_suppliers').select('id,name,contact,branch_id,status,created_by_name,created_at,reviewed_at').order('name'),
+    supabase.from('cms_suppliers').select('id,name,contact,branch_id,status,created_by,created_by_name,created_at,reviewed_at').order('name'),
     supabase.from('cms_supplier_items').select('id,supplier_id,name,price,created_by_name,created_at').order('created_at'),
   ]);
   if (s.error || i.error) throw new Error('Unable to load suppliers from the server.');
   const suppliers: OnlineSupplier[] = ((s.data || []) as SupRow[]).map(r => ({
     id: r.id, name: r.name, phone: r.contact || '', branch: r.branch_id, status: r.status,
-    by: r.created_by_name || 'Staff', at: r.created_at, reviewedAt: r.reviewed_at,
+    by: r.created_by_name || 'Staff', at: r.created_at, reviewedAt: r.reviewed_at, createdBy: r.created_by,
   }));
   const items: OnlineSupplierItem[] = ((i.data || []) as ItemRow[]).map(r => ({
     id: r.id, supplierId: r.supplier_id, name: r.name, price: r.price === null ? null : Number(r.price),
@@ -49,5 +49,9 @@ export async function reviewSupplier(id: string, approve: boolean) {
 }
 export async function addSupplierItem(supplierId: string, name: string, price: number | null) {
   const { error } = await getSupabaseClient().rpc('cms_add_supplier_item', { p_supplier_id: supplierId, p_name: name, p_price: price });
+  if (error) throw new Error(clean(error.message));
+}
+export async function updateSupplier(id: string, name: string, contact: string) {
+  const { error } = await getSupabaseClient().rpc('cms_update_supplier', { p_id: id, p_name: name, p_contact: contact });
   if (error) throw new Error(clean(error.message));
 }
