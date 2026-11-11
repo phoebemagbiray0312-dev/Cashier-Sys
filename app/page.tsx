@@ -198,7 +198,7 @@ export default function Home(){
      if(collection==='settings')return previous?{...old,settings:previous as Database['settings']}:old;
      const list=((old as unknown as Record<string,{id:string}[]|undefined>)[collection]||[]);
      const next=previous?(list.some(r=>r.id===id)?list.map(r=>r.id===id?previous as {id:string}:r):[previous as {id:string},...list]):list.filter(r=>r.id!==id);
-     return {...old,[collection]:next} as Database;
+     return {...old,[collection]:next} as unknown as Database;
     });
     setToast(`Not saved: ${message}`);
    },
@@ -213,7 +213,7 @@ export default function Home(){
    const saved=backupLocalOnlyRecords(pickRecordLists(db),remote);
    if(saved)setToast(`${saved} browser-only record(s) were not uploaded; a copy was kept on this device.`);
    const settingsInUse=remote.settings?{...db.settings,...remote.settings}:db.settings;
-   setDB(old=>({...old,...remote.lists,settings:settingsInUse} as Database));
+   setDB(old=>({...old,...remote.lists,settings:settingsInUse} as unknown as Database));
    getRecSyncer().reset({...remote,settings:remote.settings?settingsInUse:null},onlineIdentity?.role==='admin',settingsInUse);setRecReady(true);
   }catch(error){setRecSync('error');setToast(error instanceof Error?error.message:'Could not load records.');}
  }
