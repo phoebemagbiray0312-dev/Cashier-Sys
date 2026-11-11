@@ -5,6 +5,13 @@ export const dynamic = 'force-dynamic';
 const branches = ['UCQC','UCM','UCLP','MMM'];
 const noStore = { 'Cache-Control': 'no-store' };
 function fail(error: string, status: number) { return NextResponse.json({error}, {status,headers:noStore}); }
+const roles = ['cashier','pb','admin'];
+/** Admins have no branch (all branches); Parts Buyers may be ALL; Cashiers need one branch. */
+function validRoleBranch(role:string, branch:string, superAdmin:boolean){
+ if(!roles.includes(role)) return false;
+ if(role==='admin') return superAdmin && branch==='ALL';
+ return branches.includes(branch)||(role==='pb'&&branch==='ALL');
+}
 async function context(request: NextRequest) {
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL;
  const key=process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -15,17 +22,17 @@ async function context(request: NextRequest) {
  const admin=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
  const {data:{user},error}=await admin.auth.getUser(token);
  if(error||!user) return null;
- const {data:profile,error:profileError}=await admin.from('cms_profiles').select('role,active').eq('user_id',user.id).maybeSingle();
+ const {data:profile,error:profileError}=await admin.from('cms_profiles').select('role,active,is_super_admin').eq('user_id',user.id).maybeSingle();
  if(profileError||!profile?.active||profile.role!=='admin') return null;
- return {admin,user};
+ return {admin,user,superAdmin:profile.is_super_admin===true};
 }
 export async function GET(request: NextRequest) {
  const ctx=await context(request);
  if(!ctx)return fail('Admin authentication required.',403);
- const {data,error}=await ctx.admin.from('cms_profiles').select('user_id,username,display_name,role,branch_id,active,created_at').order('created_at',{ascending:false});
+ const {data,error}=await ctx.admin.from('cms_profiles').select('user_id,username,display_name,role,branch_id,active,created_at,is_super_admin').order('created_at',{ascending:false});
  if(error)return fail('Unable to load staff accounts.',500);
  const staff=await Promise.all((data||[]).map(async row=>{const {data:authData}=await ctx.admin.auth.admin.getUserById(row.user_id);return {...row,email:authData.user?.email||''};}));
- return NextResponse.json({staff}, {headers:noStore});
+ return NextResponse.json({staff,me:{superAdmin:ctx.superAdmin}}, {headers:noStore});
 }
 export async function POST(request: NextRequest) {
  const ctx=await context(request);
@@ -40,8 +47,8 @@ export async function POST(request: NextRequest) {
  const branch=body.branch;
  if(!/^[a-z][a-z0-9._-]{2,31}$/.test(username)||displayName.length<2||displayName.length>100||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||
-    password.length<12||password.length>128||!['cashier','pb'].includes(String(role))||!(branches.includes(String(branch))||(role==='pb'&&branch==='ALL')))
-   return fail('Enter a valid username, email, name, role, branch and a password of at least 12 characters.',400);
+    password.length<12||password.length>128||!validRoleBranch(String(role),String(branch),ctx.superAdmin))
+   return fail(role==='admin'&&!ctx.superAdmin?'Only the Super Admin can create Admin accounts.':'Enter a valid username, email, name, role, branch and a password of at least 12 characters.',400);
  const {data:existing,error:lookupError}=await ctx.admin.from('cms_profiles').select('user_id').eq('username',username).maybeSingle();
  if(lookupError)return fail('Unable to verify username.',500);
  if(existing)return fail('Username is already taken.',409);
@@ -67,9 +74,10 @@ async function staffTarget(request:NextRequest){
  const id=typeof body.userId==='string'?body.userId:'';
  if(!/^[0-9a-f-]{36}$/i.test(id))return {error:fail('Invalid staff account.',400)} as const;
  if(id===ctx.user.id)return {error:fail('You cannot modify your own Admin account here.',403)} as const;
- const {data:target,error}=await ctx.admin.from('cms_profiles').select('user_id,role,active').eq('user_id',id).maybeSingle();
+ const {data:target,error}=await ctx.admin.from('cms_profiles').select('user_id,role,active,is_super_admin').eq('user_id',id).maybeSingle();
  if(error||!target)return {error:fail('Staff account not found.',404)} as const;
- if(target.role==='admin')return {error:fail('Other Admin accounts cannot be modified here.',403)} as const;
+ if(target.is_super_admin)return {error:fail('The Super Admin account cannot be modified here.',403)} as const;
+ if(target.role==='admin'&&!ctx.superAdmin)return {error:fail('Only the Super Admin can modify Admin accounts.',403)} as const;
  return {ctx,body,id,target} as const;
 }
 export async function PATCH(request:NextRequest){
@@ -91,8 +99,8 @@ export async function PATCH(request:NextRequest){
  const branch=String(body.branch||'');
  if(!/^[a-z][a-z0-9._-]{2,31}$/.test(username)||displayName.length<2||displayName.length>100||
  !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||
- !['cashier','pb'].includes(role)||!(branches.includes(branch)||(role==='pb'&&branch==='ALL')))
- return fail('Invalid staff details.',400);
+ !validRoleBranch(role,branch,ctx.superAdmin))
+ return fail(role==='admin'&&!ctx.superAdmin?'Only the Super Admin can assign the Admin role.':'Invalid staff details.',400);
  const {data:other,error:lookupError}=await ctx.admin.from('cms_profiles').select('user_id').eq('username',username).neq('user_id',id).maybeSingle();
  if(lookupError)return fail('Unable to verify username.',500);
  if(other)return fail('Username is already taken.',409);
