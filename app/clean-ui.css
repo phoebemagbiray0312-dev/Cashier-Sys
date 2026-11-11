@@ -370,3 +370,6 @@
 .sup-dialog-head h3{margin:0;font-size:16px}
 .sup-row-end{display:flex;justify-content:flex-end;gap:8px}
 @media(max-width:820px){.sup-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.sup-add{grid-template-columns:1fr}.sup-finder{grid-template-columns:1fr}.sup-table th:nth-child(5),.sup-table td:nth-child(5){display:none}}
+.sup-actions{flex-wrap:nowrap}
+.sup-table td .sup-by{white-space:nowrap}
+@media(max-width:1100px){.sup-actions{flex-wrap:wrap}}
