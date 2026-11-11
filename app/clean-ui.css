@@ -270,3 +270,18 @@
   .rail-tip::before{content:"";position:absolute;left:-4px;top:50%;width:8px;height:8px;background:#1d2023;transform:translateY(-50%) rotate(45deg)}
 }
 @media screen and (max-width: 699px){ .avatar-menu-top{top:58px;right:12px} .avatar-menu-side{left:12px;bottom:84px} }
+
+/* v9.31.3 — Horizontal Underchargers logo in the phone drawer and the opened tablet menu */
+.side-brand .brand-wide-img{display:none}
+@media screen and (max-width: 699px){
+  aside.sidebar .side-brand .brand-logo-responsive:has(.brand-wide-img) > .brand-symbol-wrap,
+  aside.sidebar .side-brand .brand-logo-responsive:has(.brand-wide-img) .brand-full-img{display:none !important}
+  aside.sidebar .side-brand .brand-wide-img{display:block;width:100% !important;max-width:210px !important;height:auto !important;transform:none !important;margin:6px auto}
+  aside.sidebar .side-brand .brand-logo-responsive:has(.brand-wide-img){height:auto;width:100%}
+  aside.sidebar .side-brand:has(.brand-wide-img){min-height:0 !important;height:auto !important;padding:18px 18px 16px !important}
+}
+@media screen and (min-width: 700px) and (max-width: 1100px){
+  aside.sidebar.sidebar-open .side-brand .brand-logo-responsive:has(.brand-wide-img) .brand-full-img{display:none !important}
+  aside.sidebar.sidebar-open .side-brand .brand-wide-img{display:block;width:100% !important;max-width:200px !important;height:auto !important;transform:none !important;margin:4px auto}
+  aside.sidebar.sidebar-open .side-brand{height:auto;min-height:0;padding:16px 18px}
+}
