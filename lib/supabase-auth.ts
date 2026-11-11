@@ -77,3 +77,19 @@ export async function signInStaffByUsername(username: string, password: string):
   }
   return staff;
 }
+
+/** v9.26: Changes the signed-in staff member's real Supabase password after re-checking the current one. */
+export async function changeStaffPassword(currentPassword: string, newPassword: string): Promise<void> {
+  if (newPassword.length < 12 || newPassword.length > 128) throw new Error('New password must contain 12–128 characters.');
+  if (newPassword === currentPassword) throw new Error('New password must be different from the current password.');
+  const supabase = getSupabaseClient();
+  const { data: auth, error: authError } = await supabase.auth.getUser();
+  if (authError || !auth.user?.email) throw new Error('Your session has expired. Sign in again.');
+  const { error: verifyError } = await supabase.auth.signInWithPassword({ email: auth.user.email, password: currentPassword });
+  if (verifyError) throw new Error('Current password is incorrect.');
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) {
+    if (/pwned|leaked|weak|compromised/i.test(error.message)) throw new Error('That password is too weak or has appeared in a data breach. Choose another.');
+    throw new Error('Password could not be changed. Please try again.');
+  }
+}
