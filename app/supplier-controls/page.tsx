@@ -1,5 +1,6 @@
 'use client';
 import {getSignedInAppUser} from '@/lib/supabase-auth';
+import {loadSuppliers,addSupplier,reviewSupplier,addSupplierItem} from '@/lib/supplier-online';
 import React,{Suspense,useEffect,useState} from 'react';
 import Link from 'next/link';
 import {useSearchParams} from 'next/navigation';
@@ -7,7 +8,6 @@ import {BRANCHES,loadDB,type BranchId,type Role} from '@/lib/data';
 type Supplier={id:string;name:string;phone:string;branch:BranchId;status:'For Review'|'Verified'|'Flagged';by:string;at:string};
 type SupplierItem={id:string;supplierId:string;name:string;price:number|null;by:string;at:string};
 type Store={suppliers:Supplier[];units:unknown[];items:unknown[];supplierCatalog?:SupplierItem[];requests:unknown[];audit:{id:string;at:string;by:string;detail:string}[]};
-const KEY='uc-supplier-unit-controls-pilot-v1';
 const normalizeName=(v:string)=>v.trim().replace(/\s+/g,' ').toLocaleUpperCase();
 const dedupe=(rows:Supplier[])=>{const found=new Map<string,Supplier>();for(const row of rows){const key=normalizeName(row.name);const prior=found.get(key);if(!prior){found.set(key,row);continue;}const winner=prior.status==='Verified'?prior:row.status==='Verified'?row:prior;found.set(key,{...winner,phone:[...new Set([prior.phone,row.phone].flatMap(v=>v.split(/\s*\/\s*/)).filter(Boolean))].join(' / ')});}return [...found.values()]};
 /** Illustrative demo catalog only. Supplier-item associations are NOT verified. */
@@ -26,7 +26,6 @@ const demoCatalog:Record<string,string[]>={
  'JANICE AUTO SUPPLY':['Oil filter (sample)','Fuel filter (sample)','Brake pads (sample)'],
  'JZVC BANAWE':['Oil filter (sample)','Air filter (sample)','Brake cleaner (sample)']
 };
-const initialSuppliers:[string,string][]=[['TOYOSCO','09778490850 / 09298780461'],['THUNDER','09255986464 / 09228133077'],['RJC AUTO PARTS','09778014246'],['KJL AUTO PARTS','09178988863'],['EURO AUTO PARTS','09228227727'],['FAST DELIVERY','09165629827'],['ECSF','09166879608'],['BENZLAND','09174130169'],['HONDA CARS QC','09189929364'],['JC EMERALD','09190641869'],['BANAWE CENTER','09362529700'],['JANICE AUTO SUPPLY','09270057862'],['JZVC BANAWE','09562984945']];
 export default function SupplierControls(){return <Suspense fallback={<main style={{padding:32}}>Loading suppliers…</main>}><SupplierControlsContent/></Suspense>}
 function SupplierControlsContent(){
  const embedded=useSearchParams().get('embedded')==='1';
@@ -35,11 +34,12 @@ function SupplierControlsContent(){
  const [role,setRole]=useState<Role>('cashier'),[userId,setUserId]=useState(''),[userName,setUserName]=useState(''),[assigned,setAssigned]=useState<BranchId>('UCM');
  const [branch,setBranch]=useState<BranchId>('UCM'),[search,setSearch]=useState(''),[name,setName]=useState(''),[phone,setPhone]=useState('');
  useEffect(()=>{let mounted=true;getSignedInAppUser().then(u=>{if(mounted&&u){setRole(u.role);setUserId(u.id);setUserName(u.name);setAssigned(u.branch);setBranch(u.branch);}}).catch(()=>{});return()=>{mounted=false;};},[]);
- useEffect(()=>{try{const raw=localStorage.getItem(KEY);if(raw){const old=JSON.parse(raw);setStore({suppliers:dedupe([...(old.suppliers||[]),...initialSuppliers.map(([n,p],i)=>({id:'ucqc-'+i,name:n,phone:p,branch:'UCQC' as BranchId,status:'Verified' as const,by:'Imported UCQC list',at:new Date().toISOString()}))]),units:old.units||[],items:old.items||[],supplierCatalog:old.supplierCatalog||[],requests:old.requests||[],audit:old.audit||[]});}else{setStore({suppliers:initialSuppliers.map(([n,p],i)=>({id:'ucqc-'+i,name:n,phone:p,branch:'UCQC',status:'Verified',by:'Imported UCQC list',at:new Date().toISOString()})),units:[],items:[],supplierCatalog:[],requests:[],audit:[]});}}catch{setError('Unable to load supplier records.')}setReady(true)},[]);
- function commit(suppliers:Supplier[],detail:string){const next={...store,suppliers,audit:[{id:crypto.randomUUID(),at:new Date().toISOString(),by:userName||userId,detail},...store.audit]};try{localStorage.setItem(KEY,JSON.stringify(next));setStore(next);setError('');}catch{setError('Could not save: browser storage may be full. No changes were saved.');}}
- function addCatalogItem(e:React.FormEvent){e.preventDefault();if(!chosen||!userId||!['pb','admin'].includes(role))return;const clean=catalogName.trim(),price=catalogPrice.trim()===''?null:Number(catalogPrice);if(!clean||price!==null&&(!Number.isFinite(price)||price<0)){setError('Enter an item name and a valid non-negative price.');return;}const existing=store.supplierCatalog||[];if(existing.some(x=>x.supplierId===chosen.id&&normalizeName(x.name)===normalizeName(clean))){setError('This item is already in the supplier catalog.');return;}const at=new Date().toISOString();const next={...store,supplierCatalog:[...existing,{id:crypto.randomUUID(),supplierId:chosen.id,name:clean,price,by:userName,at}],audit:[{id:crypto.randomUUID(),at,by:userName,detail:'Supplier catalog item added: '+chosen.name+' · '+clean},...store.audit]};try{localStorage.setItem(KEY,JSON.stringify(next));setStore(next);setCatalogName('');setCatalogPrice('');setError('');}catch{setError('Unable to save catalog item.');}}
- function submit(e:React.FormEvent){e.preventDefault();if(!userId||role!=='pb'&&role!=='admin'){setError('Only Parts Buyer or Admin may add suppliers.');return;}const clean=name.trim(),tel=phone.trim();if(!clean||!tel){setError('Supplier name and contact are required.');return;}if(store.suppliers.some(s=>normalizeName(s.name)===normalizeName(clean))){setError('Supplier already exists for this branch.');return;}const row:Supplier={id:crypto.randomUUID(),name:clean,phone:tel,branch,status:role==='admin'?'Verified':'For Review',by:userName,at:new Date().toISOString()};commit([row,...store.suppliers],'Supplier submitted: '+clean+' ('+branch+')');setName('');setPhone('');}
- function decide(s:Supplier,approve:boolean){if(role!=='admin'||!userId)return;commit(store.suppliers.map(x=>x.id===s.id?{...x,status:approve?'Verified':'Flagged'}:x),(approve?'Supplier approved: ':'Supplier flagged: ')+s.name+' ('+s.branch+')');}
+ // v9.30: supplier master list + catalog come from Supabase.
+ async function reload(){try{const data=await loadSuppliers();setStore(old=>({...old,suppliers:data.suppliers as unknown as Supplier[],supplierCatalog:data.items as unknown as SupplierItem[],audit:data.activity}));setError('');}catch(e){setError(e instanceof Error?e.message:'Unable to load supplier records.');}finally{setReady(true);}}
+ useEffect(()=>{void reload();},[]);
+ async function addCatalogItem(e:React.FormEvent){e.preventDefault();if(!chosen||!userId||!['pb','admin'].includes(role))return;const clean=catalogName.trim(),price=catalogPrice.trim()===''?null:Number(catalogPrice);if(!clean||price!==null&&(!Number.isFinite(price)||price<0)){setError('Enter an item name and a valid non-negative price.');return;}try{await addSupplierItem(chosen.id,clean,price);setCatalogName('');setCatalogPrice('');await reload();}catch(err){setError(err instanceof Error?err.message:'Unable to save catalog item.');}}
+ async function submit(e:React.FormEvent){e.preventDefault();if(!userId||role!=='pb'&&role!=='admin'){setError('Only Parts Buyer or Admin may add suppliers.');return;}const clean=name.trim(),tel=phone.trim();if(!clean||!tel){setError('Supplier name and contact are required.');return;}try{await addSupplier(clean,tel,branch);setName('');setPhone('');await reload();}catch(err){setError(err instanceof Error?err.message:'Could not save supplier.');}}
+ async function decide(s:Supplier,approve:boolean){if(role!=='admin'||!userId)return;try{await reviewSupplier(s.id,approve);await reload();}catch(err){setError(err instanceof Error?err.message:'Could not update supplier.');}}
  const [selectedSupplier,setSelectedSupplier]=useState('');
  const [profileTab,setProfileTab]=useState<'items'|'purchases'|'payments'|'activity'>('items');
  const [catalogName,setCatalogName]=useState(''),[catalogPrice,setCatalogPrice]=useState('');
@@ -61,12 +61,7 @@ function SupplierControlsContent(){
  if(!ready)return <main style={{padding:32}}>Loading suppliers…</main>;
  return <main style={{maxWidth:1120,margin:'0 auto',padding:'24px 20px',fontFamily:'inherit'}}>
   {!embedded&&<header style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap',marginBottom:24}}><div><small>UC Finance · Supplier Database</small><h1 style={{fontSize:27,fontWeight:750,margin:'5px 0'}}>Supplier Management</h1><p style={{color:'#64748b'}}>Shared supplier masterlist for UCM, UCQC, UCLP and Mastermind. Parts purchases and RFP deductions must be recorded in Parts Fund (RFP).</p></div><Link href="/" style={{background:'#f3d777',color:'#1e293b',padding:'11px 17px',borderRadius:9,fontWeight:700,textDecoration:'none'}}>← Back to Dashboard</Link></header>}
-  <section style={{border:'1px solid #e8d18a',background:'#fff9e6',borderRadius:12,padding:'14px 18px',marginBottom:18}}>
-    <strong>Live Supabase Supplier Records</strong>
-    <p style={{margin:'6px 0 12px',fontSize:13}}>The supplier catalog below still uses browser-local storage. For shared, database-backed supplier records, use the secure staff workspace. These two lists are not synchronized yet; do not enter production suppliers in the local catalog.</p>
-    <Link href="/backend-access" style={{display:'inline-block',background:'#eabf36',color:'#1f2937',padding:'9px 14px',borderRadius:8,fontWeight:700,textDecoration:'none'}}>Open Live Supplier Database</Link>
-  </section>
-  {!userId&&<p role="alert" style={{color:'#b91c1c'}}>Sign in to the main Dashboard first to access supplier actions.</p>}
+  {!userId&&<p role="alert" style={{color:'#b91c1c'}}>Sign in with a staff account to access supplier actions.</p>}
   {error&&<p role="alert" style={{color:'#b91c1c'}}>{error}</p>}
   {!chosen&&<>
   <section style={{display:'flex',gap:12,flexWrap:'wrap',marginBottom:18}}>

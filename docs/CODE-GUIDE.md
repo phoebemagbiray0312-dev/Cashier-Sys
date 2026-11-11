@@ -1,4 +1,4 @@
-# Code Guide — Saan makikita ang code (v9.26 – v9.29)
+# Code Guide — Saan makikita ang code (v9.26 – v9.30)
 
 Gabay ito sa mga binago noong **Nov 9–11, 2026** para makita mo kung saan nakalagay ang bawat bahagi ng system.
 Puwede mong buksan ang bawat file sa GitHub: `https://github.com/phoebemagbiray0312-dev/Cashier-Sys/blob/main/<path>`
@@ -75,6 +75,20 @@ Kasama: RF/RFP fund entries, disbursement requests, cash counts, turnovers, inci
 | Settings: "View only" para sa ordinaryong Admin; mga save button nag-che-check | `app/page.tsx` → hanapin `isSuperAdmin` |
 | Audit Trail report: Super Admin lang | `app/page.tsx` → `reportsAvailable`, `printSelectedReport` |
 | Label sa sidebar: "Super Admin" | `app/page.tsx` → hanapin `'Super Admin'` |
+
+---
+
+## 6. Supplier master list sa Supabase — v9.30
+
+| Ano | Saan |
+|---|---|
+| Database: `cms_suppliers` (status, sino ang nag-submit/nag-review) + bagong `cms_supplier_items` | `supabase/migrations/20261111_supplier_master_list.sql` |
+| ├ Magdagdag ng supplier (PB/Admin; Admin → Verified agad, PB → For Review; bawal ang duplicate) | same file → `cms_add_supplier` |
+| ├ Approve / Flag (Admin lang) | same file → `cms_review_supplier` |
+| └ Magdagdag ng catalog item (PB/Admin) | same file → `cms_add_supplier_item` |
+| App: pag-load at pag-save | `lib/supplier-online.ts` |
+| Supplier Management screen | `app/supplier-controls/page.tsx` → `reload`, `submit`, `decide`, `addCatalogItem` |
+| Inventory sumusunod sa branch sa itaas (Admin) | `components/OnlineInventoryWorkspace.tsx` → prop `pageBranch` |
 
 ---
 
