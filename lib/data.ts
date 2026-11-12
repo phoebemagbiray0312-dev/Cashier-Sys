@@ -35,6 +35,8 @@ export function pendingRFPDisbursementRows(db:Database,branch:BranchId):FundEntr
 export const BRANCH_NAME = (id:BranchId) => BRANCHES.find(b=>b.id===id)?.name || id;
 export interface User {id:string;username:string;password:string;name:string;role:Role;branch:BranchId;active:boolean;lastLoginDate?:string;}
 export interface Receipt {name:string;data:string}
+/** v9.41: Cashier supplier receipt or PB refund report attached to a PB purchase order (RFP entry). Saved online. */
+export interface RFPReceiptRecord {id:string;branch:BranchId;purchaseId:string;type:'receipt'|'refund';amount:number;reference:string;proof?:string;proofName?:string;status:'Pending'|'Matched'|'Discrepancy'|'Received';by:string;at:string;reason?:string;reviewBy?:string;reviewAt?:string;replacesId?:string}
 export interface FundEntry {
   id:string;no:string;fund:Fund;kind:'expense'|'replenishment';branch:BranchId;date:string;amount:number;category:string;payee:string;vat:'VAT'|'Non-VAT';voucher:string;receiptNo:string;tin:string;description:string;notes:string;proof?:Receipt;signature?:string;onlineCharge?:number;
   status:Status;createdBy:string;createdAt:string;decisionBy?:string;decisionAt?:string;decisionNote?:string;
@@ -71,7 +73,7 @@ export interface Turnover {id:string;branch:BranchId;date:string;amount:number;n
 export interface ChangeRequest {id:string;type:'Edit RFP'|'Change Branch';entryId:string;branch:BranchId;requestedBy:string;changes:Partial<FundEntry>;original?:Partial<FundEntry>;reason:string;status:'Pending'|'Approved'|'Rejected';createdAt:string;decidedBy?:string;}
 export interface Audit {id:string;at:string;by:string;action:string;detail:string;}
 export interface Database {
-  users:User[];fundEntries:FundEntry[];disbursementRequests?:DisbursementRequest[];pos:POS[];deletedPOSDrafts?:DeletedPOSDraft[];inventory:InventoryProduct[];stockMovements:StockMovement[];stockRequests:StockCorrection[];stockReceipts:StockReceipt[];stockIssues?:StockIssueRequest[];terminalEvents?:TerminalEvent[];terminalSettlements?:TerminalSettlement[];counts:Count[];incidents:Incident[];turnovers:Turnover[];requests:ChangeRequest[];audit:Audit[];
+  users:User[];fundEntries:FundEntry[];rfpReceipts?:RFPReceiptRecord[];disbursementRequests?:DisbursementRequest[];pos:POS[];deletedPOSDrafts?:DeletedPOSDraft[];inventory:InventoryProduct[];stockMovements:StockMovement[];stockRequests:StockCorrection[];stockReceipts:StockReceipt[];stockIssues?:StockIssueRequest[];terminalEvents?:TerminalEvent[];terminalSettlements?:TerminalSettlement[];counts:Count[];incidents:Incident[];turnovers:Turnover[];requests:ChangeRequest[];audit:Audit[];
   settings:{rfBase:Record<BranchId,number>;rfpBase:Record<BranchId,number>;categories:string[];signatories?:{checked:string;approved:string};reportLogo?:Receipt};
 }
 export const uid = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ID-${Date.now()}-${Math.random().toString(36).slice(2,7)}`);

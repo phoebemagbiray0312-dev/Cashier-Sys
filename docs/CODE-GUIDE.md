@@ -1,4 +1,4 @@
-# Code Guide — Saan makikita ang code (v9.26 – v9.37)
+# Code Guide — Saan makikita ang code (v9.26 – v9.41)
 
 Gabay ito sa mga binago noong **Nov 9–11, 2026** para makita mo kung saan nakalagay ang bawat bahagi ng system.
 Puwede mong buksan ang bawat file sa GitHub: `https://github.com/phoebemagbiray0312-dev/Cashier-Sys/blob/main/<path>`
@@ -130,6 +130,18 @@ Kasama: RF/RFP fund entries, disbursement requests, cash counts, turnovers, inci
 | Cashier puwede nang magdagdag/mag-edit ng supplier at catalog item (For Review hanggang i-approve ng Admin) | `supabase/migrations/20261112_cashier_suppliers.sql`; `components/SupplierWorkspace.tsx` → `canAdd`, `canEdit` |
 | Mas maikling RF number (hal. `UCM-RF-00000001`) | `lib/data.ts` → hanapin `RF numbers are short` |
 | RFP = iisang pondo ng Parts Buyer para sa lahat ng branch (UC + Mastermind); bawat bili may tag pa rin kung aling branch | `lib/data.ts` → `rfpPoolBase`, `fundBase`, `balance`; Settings → `saveInitialFund` sa `app/page.tsx` |
+
+---
+
+## 10. Unit (sasakyan) audit: PO ni PB + resibo ni Cashier + iba pang gastos — v9.41
+
+| Ano | Saan |
+|---|---|
+| Resibo ng Cashier at refund report ng PB sa bawat PO, naka-save online (collection `rfpReceipts`) | `components/RFPReconciliation.tsx` → props `records`, `onSave`; `lib/record-sync.ts` → `RECORD_COLLECTIONS` |
+| Unit Audit sa loob ng POS (lahat ng PO, screenshot ng bayad ni PB, resibo ng supplier, iba pang gastos, totals) | `components/UnitAudit.tsx`; nakakabit sa `app/page.tsx` → hanapin `<UnitAudit` |
+| Record Expense (RF) na may "For unit" para ikabit sa POS; may "Add unit expense" button sa POS | `app/page.tsx` → `createExpense` (`unitPosId`, `linkedPosId`) |
+| PO form ni PB: listahan ng bukas na unit sa lahat ng branch, o mag-type ng bagong unit | `app/page.tsx` → hanapin `Open units waiting for parts` |
+| PB puwedeng "All branches" (walang branch) sa database | `supabase/migrations/20261112_pb_all_branches.sql` |
 
 ---
 

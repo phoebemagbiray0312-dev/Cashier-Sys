@@ -10,6 +10,7 @@ import type { Database } from './data';
 export const RECORD_COLLECTIONS = [
   'fundEntries', 'disbursementRequests', 'counts', 'turnovers', 'incidents', 'requests',
   'terminalEvents', 'terminalSettlements', 'stockRequests', 'stockReceipts', 'stockIssues', 'audit',
+  'rfpReceipts', // v9.41: cashier supplier receipts / PB refund reports per PO
 ] as const;
 export type RecordCollection = typeof RECORD_COLLECTIONS[number];
 type AnyRecord = { id: string } & Record<string, unknown>;
