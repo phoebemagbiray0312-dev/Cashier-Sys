@@ -8,6 +8,7 @@ import { useMemo, useState } from 'react';
 import { Download, Printer, X } from 'lucide-react';
 import type { Database, FundEntry } from '@/lib/data';
 import { rfpPoolBase } from '@/lib/data';
+import { SignaturePad } from '@/components/Ui';
 
 const BR = [['MMM', 'MASTER MIND AMOUNT PAID'], ['UCLP', 'LAS PIÑAS BRANCH AMOUNT PAID'], ['UCQC', 'QC BRANCH AMOUNT PAID'], ['UCM', 'MANDA BRANCH AMOUNT PAID']] as const;
 const HEADS = ['Date', ...BR.map(b => b[1]), 'SUPPLIER', 'SUPPLIER TIN No.', 'ONLINE PAYMENT/ REFUND', 'ONLINE PAYMENT CHARGE', 'TOTAL AMOUNT EXPENSES', 'Remarks', 'Notes'];
@@ -22,7 +23,7 @@ const unitLabel = (car: string, plate: string) => { const m = car.trim().match(/
 
 type Row = { date: string; branch: string; amount: number; supplier: string; tin: string; refund: number; charge: number; total: number; remarks: string; notes: string };
 
-export default function RFPDisbursementSheet({ db, preparedBy, onClose }: { db: Database; preparedBy: string; onClose: () => void }) {
+export default function RFPDisbursementSheet({ db, preparedBy, preparedById, onClose }: { db: Database; preparedBy: string; preparedById?: string; onClose: () => void }) {
   const today = ph(new Date());
   const reps = db.fundEntries.filter(e => e.fund === 'RFP' && e.kind === 'replenishment' && e.status !== 'Rejected').sort((a, b) => a.date.localeCompare(b.date));
   const lastRep = reps[reps.length - 1];
@@ -35,6 +36,10 @@ export default function RFPDisbursementSheet({ db, preparedBy, onClose }: { db: 
   const [lastReq, setLastReq] = useState('');
   const [checkedBy, setCheckedBy] = useState(db.settings.signatories?.checked || '');
   const [approvedBy, setApprovedBy] = useState(db.settings.signatories?.approved || 'PRESIDENT');
+  // v9.45.3: preparer's signature — starts from the signature on their latest RFP purchase
+  const lastSig = db.fundEntries.filter(e => e.fund === 'RFP' && e.signature && (!preparedById || e.createdBy === preparedById)).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]?.signature || '';
+  const [signature, setSignature] = useState(lastSig);
+  const [signing, setSigning] = useState(!lastSig);
 
   const rows = useMemo<Row[]>(() => {
     const lines = db.fundEntries.filter(e => e.fund === 'RFP' && e.kind === 'expense' && e.status !== 'Rejected' && e.date >= from && e.date <= to);
@@ -73,7 +78,7 @@ ${rows.length ? '' : '<tr><td colspan="12" class="c" style="padding:14px;color:#
 <tr class="ds-sum"><td class="c">TOTAL</td>${BR.map(b => `<td class="n">${pesoZ(branchSum(b[0]))}</td>`).join('')}<td></td><td></td><td class="n">${pesoZ(sum('refund'))}</td><td class="n">${pesoZ(sum('charge'))}</td><td class="n ds-tot">${pesoZ(expenses)}</td><td></td><td></td></tr>
 </table>
 <div class="ds-bottom"><table class="ds-s">${summary.map(([l, v, x], i) => `<tr class="${i === 0 || i === 8 ? 'cy' : i === 5 ? 'yl' : ''}"><td>${esc(l)}</td><td class="n">${v}</td><td>${esc(x || '')}</td></tr>`).join('')}</table>
-<table class="ds-sig"><tr><td>PREPARED BY:</td><td>${esc(preparedBy.toUpperCase())}</td></tr><tr><td>CHECKED BY:</td><td>${esc(checkedBy)}</td></tr><tr><td>APPROVED BY:</td><td>${esc(approvedBy)}</td></tr></table></div>`;
+<table class="ds-sig"><tr><td>PREPARED BY:</td><td class="sigcell">${signature.startsWith('data:image/') ? `<img src="${signature}" alt="Signature"/>` : ''}<div>${esc(preparedBy.toUpperCase())}</div></td></tr><tr><td>CHECKED BY:</td><td>${esc(checkedBy)}</td></tr><tr><td>APPROVED BY:</td><td>${esc(approvedBy)}</td></tr></table></div>`;
 
   const sheetCss = `.ds{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:9.5px;table-layout:fixed}
 .ds td,.ds th{border:1px solid #9aa0a6;padding:3px 4px;vertical-align:middle;overflow-wrap:anywhere}
@@ -85,7 +90,7 @@ ${rows.length ? '' : '<tr><td colspan="12" class="c" style="padding:14px;color:#
 .ds-bottom{display:flex;gap:24px;margin-top:14px;font-family:Arial,sans-serif;align-items:flex-start}
 .ds-s{border-collapse:collapse;font-size:11px;min-width:42%}.ds-s td{padding:4px 8px;font-weight:700}.ds-s td.n{text-align:right}
 .ds-s .cy td:first-child,.ds-s .cy td.n{background:#00ffff}.ds-s .yl td:first-child,.ds-s .yl td.n{background:#ffff00}
-.ds-sig{border-collapse:collapse;font-size:11px;font-weight:700;margin-left:auto}.ds-sig td{padding:10px 12px}`;
+.ds-sig{border-collapse:collapse;font-size:11px;font-weight:700;margin-left:auto}.ds-sig td{padding:10px 12px;vertical-align:bottom}.ds-sig .sigcell{text-align:center;min-width:180px}.ds-sig .sigcell img{display:block;height:44px;max-width:200px;object-fit:contain;margin:0 auto -6px}.ds-sig .sigcell div{border-top:1px solid #333;padding-top:3px}`;
 
   /** v9.45.1: print from a hidden frame on the same page (pop-up windows are often blocked) */
   function print() {
@@ -130,6 +135,11 @@ ${rows.length ? '' : '<tr><td colspan="12" class="c" style="padding:14px;color:#
         <label>Requested last cut off (₱)<input type="number" min="0" step="0.01" placeholder={String(prevReq?.amount || 0)} value={lastReq} onChange={e => setLastReq(e.target.value)} /></label>
         <label>Checked by<input value={checkedBy} onChange={e => setCheckedBy(e.target.value)} /></label>
         <label>Approved by<input value={approvedBy} onChange={e => setApprovedBy(e.target.value)} /></label>
+      </div>
+      <div className="dsm-sign">
+        <div><strong>Your signature (Prepared by)</strong><span>{signature ? (signing ? 'Sign below, it updates the report right away.' : 'Using your signature from your latest purchase.') : 'Sign below to put your signature on the report.'}</span></div>
+        {signing ? <div className="dsm-pad"><SignaturePad value={signature} onChange={setSignature} />{signature && <button type="button" className="dsm-btn" onClick={() => setSigning(false)}>Done</button>}</div>
+          : <div className="dsm-sig-preview">{signature && <img src={signature} alt="Your signature" />}<button type="button" className="dsm-btn" onClick={() => { setSignature(''); setSigning(true); }}>Sign again</button></div>}
       </div>
       <div className="dsm-actions"><span>{rows.length} PO{rows.length === 1 ? '' : 's'} · expenses {pesoZ(expenses)} · amount requested <b>{pesoZ(requested)}</b></span><button type="button" className="dsm-btn" onClick={() => void downloadExcel()}><Download size={15} /> Download Excel</button><button type="button" className="dsm-btn dsm-main" onClick={print}><Printer size={15} /> Print</button></div>
       <div className="dsm-preview"><style>{sheetCss}</style><div dangerouslySetInnerHTML={{ __html: sheetHtml() }} /></div>

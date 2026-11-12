@@ -757,3 +757,7 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .dsm .dsm-main{background:#f4c542;border-color:#f4c542;color:#332807}
 .dsm-preview{border:1px solid #eceef2;border-radius:10px;padding:10px;overflow-x:auto}
 .dsm-preview .ds{min-width:1100px}
+.dsm-sign{display:flex;gap:14px;align-items:center;flex-wrap:wrap;border:1px solid #eceef2;border-radius:10px;padding:10px 12px;margin-bottom:12px;background:#fafbfc}
+.dsm-sign>div:first-child{display:flex;flex-direction:column;gap:2px;flex:1 1 220px}.dsm-sign strong{font-size:13px}.dsm-sign span{font-size:12px;color:#667085}
+.dsm-pad{display:flex;gap:8px;align-items:flex-end;flex:2 1 360px}.dsm-pad>*:first-child{flex:1}
+.dsm-sig-preview{display:flex;gap:10px;align-items:center}.dsm-sig-preview img{height:48px;max-width:220px;object-fit:contain;background:#fff;border:1px solid #e4e7ec;border-radius:8px;padding:4px}
