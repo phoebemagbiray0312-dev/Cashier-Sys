@@ -142,6 +142,7 @@ Kasama: RF/RFP fund entries, disbursement requests, cash counts, turnovers, inci
 | Record Expense (RF) na may "For unit" para ikabit sa POS; may "Add unit expense" button sa POS | `app/page.tsx` → `createExpense` (`unitPosId`, `linkedPosId`) |
 | PO form ni PB: listahan ng bukas na unit sa lahat ng branch, o mag-type ng bagong unit | `app/page.tsx` → hanapin `Open units waiting for parts` |
 | PB puwedeng "All branches" (walang branch) sa database | `supabase/migrations/20261112_pb_all_branches.sql` |
+| User Management: na-delete na account napupunta sa **Archived accounts**, may **Restore** | `components/StaffManagement.tsx` → `restoreStaff`, `Archived accounts`; `app/api/admin/staff/route.ts` → `action==='restore'` |
 
 ---
 

@@ -91,6 +91,14 @@ export async function PATCH(request:NextRequest){
   if(error)return fail('Unable to reset password.',500);
   return NextResponse.json({ok:true},{headers:noStore});
  }
+ if(body.action==='restore'){
+  // v9.42: bring an archived (deleted) account back instead of creating a duplicate
+  const {error}=await ctx.admin.from('cms_profiles').update({active:true}).eq('user_id',id);
+  if(error)return fail('Unable to restore staff account.',500);
+  const {error:banError}=await ctx.admin.auth.admin.updateUserById(id,{ban_duration:'none'});
+  if(banError){await ctx.admin.from('cms_profiles').update({active:false}).eq('user_id',id);return fail('Unable to re-enable sign in for this account.',500);}
+  return NextResponse.json({ok:true,restored:true},{headers:noStore});
+ }
  if(body.action!=='edit')return fail('Invalid action.',400);
  const username=typeof body.username==='string'?body.username.trim().toLowerCase():'';
  const displayName=typeof body.displayName==='string'?body.displayName.trim():'';
