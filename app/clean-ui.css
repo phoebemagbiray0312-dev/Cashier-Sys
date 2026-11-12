@@ -394,3 +394,9 @@
 .stock-badge.stock-out{background:#fef3f2;color:#b42318}
 .inventory-table-wrap tr.stock-row-out td:first-child{box-shadow:inset 3px 0 0 #f04438}
 .inventory-table-wrap tr.stock-row-low td:first-child{box-shadow:inset 3px 0 0 #f79009}
+.inventory-toolbar .stock-chip{background:#fff;border:1px solid var(--line);color:#3a3f47;height:36px;padding:0 12px;border-radius:999px;box-shadow:none;font-size:12.5px}
+.inventory-toolbar .stock-chip:hover{background:#f6f7f9}
+.inventory-toolbar .stock-chip.active{border-color:#1d2023;box-shadow:inset 0 0 0 1px #1d2023;background:#fff}
+.inventory-toolbar .stock-chip-ok.active{border-color:#12b76a;box-shadow:inset 0 0 0 1px #12b76a;background:#ecfdf3}
+.inventory-toolbar .stock-chip-low.active{border-color:#f79009;box-shadow:inset 0 0 0 1px #f79009;background:#fffaeb}
+.inventory-toolbar .stock-chip-zero.active{border-color:#f04438;box-shadow:inset 0 0 0 1px #f04438;background:#fef3f2}
