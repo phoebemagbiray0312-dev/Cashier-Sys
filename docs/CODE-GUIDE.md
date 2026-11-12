@@ -137,8 +137,10 @@ Kasama: RF/RFP fund entries, disbursement requests, cash counts, turnovers, inci
 
 | Ano | Saan |
 |---|---|
-| Resibo ng Cashier at refund report ng PB sa bawat PO, naka-save online (collection `rfpReceipts`) | `components/RFPReconciliation.tsx` → props `records`, `onSave`; `lib/record-sync.ts` → `RECORD_COLLECTIONS` |
-| Unit Audit sa loob ng POS (lahat ng PO, screenshot ng bayad ni PB, resibo ng supplier, iba pang gastos, totals) | `components/UnitAudit.tsx`; nakakabit sa `app/page.tsx` → hanapin `<UnitAudit` |
+| Purchase Orders screen (v9.43, mas simple): listahan ng PO, isang status, detalye na magkatabi ang bayad ni PB at resibo ni Cashier; naka-save online (`rfpReceipts`) | `components/PurchaseOrders.tsx`; `lib/record-sync.ts` → `RECORD_COLLECTIONS` |
+| "Unit costs" tab sa POS (lahat ng PO at gastos, may ✓ o kulang) | `components/UnitAudit.tsx`; nakakabit sa `app/page.tsx` → hanapin `<UnitAudit` |
+| POS window na may tabs (Overview, Quotation & COGS, Payment, Unit costs) | `app/page.tsx` → hanapin `pos-tabs`, `activePosTab` |
+| Badge sa sidebar ng Cashier: ilang PO ang kulang ng resibo | `app/page.tsx` → hanapin `poNeedsReceipt` |
 | Record Expense (RF) na may "For unit" para ikabit sa POS; may "Add unit expense" button sa POS | `app/page.tsx` → `createExpense` (`unitPosId`, `linkedPosId`) |
 | PO form ni PB: listahan ng bukas na unit sa lahat ng branch, o mag-type ng bagong unit | `app/page.tsx` → hanapin `Open units waiting for parts` |
 | PB puwedeng "All branches" (walang branch) sa database | `supabase/migrations/20261112_pb_all_branches.sql` |

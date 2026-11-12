@@ -1,90 +1,71 @@
 'use client';
 /**
- * v9.41 — Unit Audit: everything spent on one unit (POS / vehicle) in one place.
- *  - Parts Buyer purchase orders (RFP) linked to the unit, with PB payment screenshot
- *  - Cashier supplier receipts matched to each PO (rfpReceipts)
- *  - Cashier's other unit expenses from the Revolving Fund (RF) with their receipts
- *  - Totals so an auditor can see if costs match the receipts and the sale
+ * v9.43 — Unit costs (simplified Unit Audit).
+ * One list of everything spent on this unit: Parts Buyer purchase orders and the cashier's
+ * other expenses. Each row shows whether its proof is complete, so missing receipts stand out.
  */
 import { useState } from 'react';
-import { CheckCircle2, Eye, FileWarning, Plus, Receipt as ReceiptIcon, X } from 'lucide-react';
+import { CheckCircle2, CircleAlert, Clock3, FileImage, Plus, X } from 'lucide-react';
 import type { Database, FundEntry, POS, RFPReceiptRecord } from '@/lib/data';
 import { expenseGross, normalizePlate, pesos, posTotal } from '@/lib/data';
 
 type Doc = { name: string; data: string };
-const isImage = (d: string) => d.startsWith('data:image/');
+type Row = { key: string; kind: 'Parts' | 'Expense'; title: string; sub: string; amount: number; state: 'ok' | 'missing' | 'bad'; note: string; docs: { label: string; doc?: Doc }[] };
 
 export default function UnitAudit({ db, pos, canAddExpense, onAddExpense }: { db: Database; pos: POS; canAddExpense: boolean; onAddExpense: () => void }) {
   const [preview, setPreview] = useState<Doc | null>(null);
   const plate = normalizePlate(pos.plate);
   const live = (e: FundEntry) => e.kind === 'expense' && e.status !== 'Rejected';
-  // POs: linked to this POS, or same plate and not yet linked to another POS
-  const poLines = db.fundEntries.filter(e => e.fund === 'RFP' && live(e) && (e.linkedPosId === pos.id || (!e.linkedPosId && normalizePlate(e.plate || '') === plate)));
-  const unitExpenses = db.fundEntries.filter(e => e.fund === 'RF' && live(e) && e.linkedPosId === pos.id);
+  const poLines = db.fundEntries.filter(e => e.fund === 'RFP' && live(e) && (e.linkedPosId === pos.id || (!e.linkedPosId && e.branch === pos.branch && normalizePlate(e.plate || '') === plate)));
   const receipts = (db.rfpReceipts || []) as RFPReceiptRecord[];
-  const superseded = (r: RFPReceiptRecord) => receipts.some(x => x.replacesId === r.id);
+  const current = (ids: Set<string>) => receipts.filter(r => r.type === 'receipt' && ids.has(r.purchaseId) && !receipts.some(x => x.replacesId === r.id)).sort((a, b) => b.at.localeCompare(a.at))[0];
 
-  const poGroups = [...new Map(poLines.map(e => [e.no, e])).keys()].map(no => {
-    const lines = poLines.filter(e => e.no === no);
-    const suppliers = [...new Set(lines.map(l => l.payee))].map(name => {
-      const items = lines.filter(l => l.payee === name);
-      const amount = items.reduce((n, l) => n + expenseGross(l), 0);
-      const receipt = receipts.find(r => r.type === 'receipt' && !superseded(r) && items.some(i => i.id === r.purchaseId));
-      const paymentProof = items.find(i => i.proof?.data)?.proof;
-      return { name, items, amount, receipt, paymentProof };
-    });
-    return { no, date: lines[0].date, branch: lines[0].branch, linked: lines.every(l => l.linkedPosId === pos.id), suppliers, total: suppliers.reduce((n, s) => n + s.amount, 0) };
-  });
-
-  const poTotal = poGroups.reduce((n, g) => n + g.total, 0);
-  const matchedReceipts = poGroups.reduce((n, g) => n + g.suppliers.reduce((m, s) => m + (s.receipt?.status === 'Matched' ? s.receipt.amount : 0), 0), 0);
-  const missingReceipts = poGroups.reduce((n, g) => n + g.suppliers.filter(s => !s.receipt).length, 0);
-  const flagged = poGroups.reduce((n, g) => n + g.suppliers.filter(s => s.receipt?.status === 'Discrepancy').length, 0);
-  const expenseTotal = unitExpenses.reduce((n, e) => n + expenseGross(e), 0);
-  const costTotal = poTotal + expenseTotal;
+  const rows: Row[] = [
+    ...[...new Set(poLines.map(l => l.no))].map(no => {
+      const ls = poLines.filter(l => l.no === no);
+      const amount = ls.reduce((n, l) => n + expenseGross(l), 0);
+      const r = current(new Set(ls.map(l => l.id)));
+      const state: Row['state'] = !r ? 'missing' : r.status === 'Discrepancy' ? 'bad' : 'ok';
+      return {
+        key: no, kind: 'Parts' as const, title: ls[0].payee, sub: `${no} · ${ls.map(l => l.description).join(', ')}`, amount, state,
+        note: state === 'missing' ? 'Supplier receipt missing' : state === 'bad' ? `Receipt ${pesos(r!.amount)} ≠ PO` : 'Payment + receipt complete',
+        docs: [{ label: 'PB payment', doc: ls.find(l => l.proof?.data)?.proof }, { label: 'Supplier receipt', doc: r?.proof ? { name: r.proofName || 'Receipt', data: r.proof } : undefined }],
+      };
+    }),
+    ...db.fundEntries.filter(e => e.fund === 'RF' && live(e) && e.linkedPosId === pos.id).map(e => ({
+      key: e.id, kind: 'Expense' as const, title: `${e.category} · ${e.payee}`, sub: `${e.no} · ${e.description}`, amount: expenseGross(e),
+      state: (e.proof?.data ? 'ok' : 'missing') as Row['state'], note: e.proof?.data ? (e.status === 'Approved' ? 'Approved' : 'Waiting for Admin review') : 'Receipt missing',
+      docs: [{ label: 'Receipt', doc: e.proof }],
+    })),
+  ];
+  const cost = rows.reduce((n, r) => n + r.amount, 0);
   const sale = posTotal(pos);
+  const missing = rows.filter(r => r.state !== 'ok').length;
 
-  const statusPill = (r?: RFPReceiptRecord) => !r
-    ? <span className="ua-pill ua-wait">No cashier receipt yet</span>
-    : r.status === 'Matched' ? <span className="ua-pill ua-ok"><CheckCircle2 size={12} /> Receipt matched</span>
-    : r.status === 'Discrepancy' ? <span className="ua-pill ua-bad"><FileWarning size={12} /> Discrepancy</span>
-    : <span className="ua-pill ua-wait">Receipt for review</span>;
-  const viewBtn = (d: Doc | undefined, label: string) => d?.data ? <button type="button" className="ua-link" onClick={() => setPreview(d)}><Eye size={12} /> {label}</button> : <span className="ua-missing">{label}: none</span>;
-
-  return <section className="unit-audit" aria-label="Unit audit">
-    <div className="ua-head">
-      <div><h4>Unit Audit · {pos.plate}</h4><p>All purchase orders, payments, receipts and other expenses for this unit.</p></div>
-      {canAddExpense && <button type="button" className="ua-add" onClick={onAddExpense}><Plus size={14} /> Add unit expense</button>}
+  return <section className="unit-costs" aria-label="Unit costs">
+    <div className="uc-head">
+      <div><h4>Costs for this unit</h4><p>Parts bought by the Parts Buyer and other expenses, with their receipts.</p></div>
+      {canAddExpense && <button type="button" className="uc-add" onClick={onAddExpense}><Plus size={14} /> Add expense for this unit</button>}
     </div>
-
-    <div className="ua-stats">
-      <div><small>Parts (PB purchase orders)</small><strong>{pesos(poTotal)}</strong><span>{poGroups.length} PO{poGroups.length === 1 ? '' : 's'}</span></div>
-      <div><small>Other unit expenses (RF)</small><strong>{pesos(expenseTotal)}</strong><span>{unitExpenses.length} item{unitExpenses.length === 1 ? '' : 's'}</span></div>
-      <div><small>Total cost on this unit</small><strong>{pesos(costTotal)}</strong><span>Sale {pesos(sale)} · margin {pesos(sale - costTotal)}</span></div>
-      <div className={missingReceipts || flagged ? 'ua-warn' : 'ua-good'}><small>Receipts check</small><strong>{pesos(matchedReceipts)} matched</strong><span>{missingReceipts ? `${missingReceipts} supplier receipt(s) missing` : flagged ? `${flagged} discrepancy` : poGroups.length ? 'All PO receipts in' : 'No POs yet'}</span></div>
+    <div className="uc-sum">
+      <div><small>Sale</small><strong>{pesos(sale)}</strong></div>
+      <div><small>Costs</small><strong>{pesos(cost)}</strong></div>
+      <div><small>Margin</small><strong className={sale - cost < 0 ? 'neg' : ''}>{pesos(sale - cost)}</strong></div>
     </div>
-
-    <h5>Purchase orders (Parts Buyer)</h5>
-    {poGroups.length === 0 ? <p className="ua-empty">No purchase orders for this unit yet.</p> : poGroups.map(g => <div key={g.no} className="ua-po">
-      <div className="ua-po-head"><strong>{g.no}</strong><span>{g.date} · {g.branch}{g.linked ? '' : ' · matched by plate'}</span><b>{pesos(g.total)}</b></div>
-      {g.suppliers.map(s => <div key={s.name} className="ua-supplier">
-        <div className="ua-supplier-main"><strong>{s.name}</strong><span>{s.items.map(i => `${i.description}${i.quantity && i.quantity > 1 ? ` ×${i.quantity}` : ''}`).join(', ')}</span></div>
-        <b>{pesos(s.amount)}</b>
-        <div className="ua-docs">{viewBtn(s.paymentProof, 'PB payment')}{viewBtn(s.receipt?.proof ? { name: s.receipt.proofName || 'Receipt', data: s.receipt.proof } : undefined, 'Supplier receipt')}{statusPill(s.receipt)}{s.receipt && s.receipt.amount !== s.amount && <span className="ua-pill ua-bad">Receipt {pesos(s.receipt.amount)} ≠ PO {pesos(s.amount)}</span>}</div>
-      </div>)}
-    </div>)}
-
-    <h5>Other unit expenses (Cashier · Revolving Fund)</h5>
-    {unitExpenses.length === 0 ? <p className="ua-empty">No other expenses linked to this unit.</p> : <div className="ua-exp">{unitExpenses.map(e => <div key={e.id} className="ua-supplier">
-      <div className="ua-supplier-main"><strong>{e.no} · {e.category}</strong><span>{e.payee} · {e.description}</span></div>
-      <b>{pesos(expenseGross(e))}</b>
-      <div className="ua-docs">{viewBtn(e.proof, 'Receipt')}<span className={'ua-pill ' + (e.status === 'Approved' ? 'ua-ok' : 'ua-wait')}>{e.status}</span></div>
-    </div>)}</div>}
-
+    {rows.length === 0 ? <p className="uc-empty">No parts or expenses recorded for this unit yet.</p> : <>
+      {missing > 0 && <p className="uc-alert"><CircleAlert size={14} /> {missing} item{missing === 1 ? '' : 's'} still need{missing === 1 ? 's' : ''} a receipt or a check. Attach supplier receipts in <b>Purchase Orders</b>.</p>}
+      <ul className="uc-list">{rows.map(r => <li key={r.key} className={'uc-' + r.state}>
+        <span className="uc-icon">{r.state === 'ok' ? <CheckCircle2 size={17} /> : r.state === 'bad' ? <CircleAlert size={17} /> : <Clock3 size={17} />}</span>
+        <span className="uc-main"><span className="uc-kind">{r.kind === 'Parts' ? 'Parts (PO)' : 'Expense'}</span><strong>{r.title}</strong><small>{r.sub}</small>
+          <span className="uc-docs">{r.docs.map(d => d.doc?.data ? <button key={d.label} type="button" onClick={() => setPreview(d.doc!)}><FileImage size={12} /> {d.label}</button> : <em key={d.label}>{d.label}: none</em>)}<i>{r.note}</i></span>
+        </span>
+        <b className="uc-amt">{pesos(r.amount)}</b>
+      </li>)}</ul>
+    </>}
     {preview && <div className="ua-preview" role="dialog" aria-modal="true" aria-label={preview.name} onClick={() => setPreview(null)}>
       <div onClick={e => e.stopPropagation()}>
-        <div className="ua-preview-head"><span><ReceiptIcon size={14} /> {preview.name}</span><button type="button" aria-label="Close" onClick={() => setPreview(null)}><X size={16} /></button></div>
-        {isImage(preview.data) ? <img src={preview.data} alt={preview.name} /> : <iframe src={preview.data} title={preview.name} />}
+        <div className="ua-preview-head"><span><FileImage size={14} /> {preview.name}</span><button type="button" aria-label="Close" onClick={() => setPreview(null)}><X size={16} /></button></div>
+        {preview.data.startsWith('data:image/') ? <img src={preview.data} alt={preview.name} /> : <iframe src={preview.data} title={preview.name} />}
       </div>
     </div>}
   </section>;
