@@ -782,3 +782,5 @@ button.inventory-branch-open:hover{text-decoration:underline}
 }
 .purchase-line+.purchase-line .purchase-line-fields>div:nth-child(2){display:none}
 @media(min-width:761px){.purchase-line+.purchase-line .purchase-line-fields{grid-template-columns:minmax(0,2fr) minmax(0,.8fr) minmax(0,1fr)!important}}
+/* v9.48 — status pills never wrap */
+.status-pill,.badge,.pill{white-space:nowrap}
