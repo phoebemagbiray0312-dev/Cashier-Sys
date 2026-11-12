@@ -533,3 +533,53 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .online-inventory .inventory-branch-metrics .branch-metric:hover{background:#fbf3dc}
 .online-inventory .inventory-branch-card .inventory-branch-open{flex:none;margin:0;font-size:11px;white-space:nowrap}
 .online-inventory #inventory-products{scroll-margin-top:84px}
+
+/* v9.37 — Phone / narrow-window layouts for Inventory and Supplier Management */
+.main-content,.sup-wrap,.sup-card,.online-inventory,.online-inventory section{min-width:0;max-width:100%}
+.studio-embedded{min-width:0}
+.studio-embedded .office-workspace{margin:0;max-width:100%}
+@media(max-width:760px){
+ /* Inventory toolbar: two buttons side by side, filter chips scroll sideways */
+ .online-inventory .inventory-main-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .online-inventory .inventory-main-toolbar>button{width:100%;padding:10px 8px;font-size:13px}
+ .online-inventory .inventory-main-toolbar .stock-legend{grid-column:1/-1;display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;padding-bottom:2px;scrollbar-width:none}
+ .online-inventory .inventory-main-toolbar .stock-legend::-webkit-scrollbar{display:none}
+ .online-inventory .inventory-main-toolbar .stock-legend .stock-chip{flex:none;width:auto;white-space:nowrap;padding:6px 11px;font-size:12px}
+ .online-inventory .inventory-filter-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .online-inventory .inventory-filter-row input{grid-column:1/-1}
+ .online-inventory .inventory-filter-row select,.online-inventory .inventory-filter-row input{width:100%;min-width:0;font-size:14px}
+ /* Product table becomes a list of compact cards */
+ .online-inventory .inventory-table-wrap:has(.inv-product-table){max-height:none;overflow:visible;border:0;background:none}
+ .online-inventory .inv-product-table,.online-inventory .inv-product-table tbody{display:block;width:100%}
+ .online-inventory .inv-product-table thead{display:none}
+ .online-inventory .inv-product-table tr{display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;row-gap:3px;padding:10px 12px;margin-bottom:8px;background:#fff;border:1px solid #eceef2;border-left:4px solid #d9dde3;border-radius:10px}
+ .online-inventory .inv-product-table tr.stock-row-low{border-left-color:#f79009}
+ .online-inventory .inv-product-table tr.stock-row-out{border-left-color:#f04438}
+ .online-inventory .inv-product-table tr.stock-row-ok{border-left-color:#12b76a}
+ .online-inventory .inv-product-table td{display:block;padding:0;border:0;background:none;box-shadow:none;font-size:12px;color:#667085;line-height:1.35}
+ .online-inventory .inv-product-table td.inv-name{order:1;flex:1 1 calc(100% - 80px);min-width:0;font-size:14px;font-weight:650;color:#1f2937}
+ .online-inventory .inv-product-table td.inv-avail{order:2;margin-left:auto}
+ .online-inventory .inv-product-table td.inv-sku{order:3;flex-basis:100%;height:0;overflow:hidden}
+ .online-inventory .inv-product-table td.inv-cat{order:4}
+ .online-inventory .inv-product-table td.inv-branch{order:5}
+ .online-inventory .inv-product-table td.inv-price{order:6}
+ .online-inventory .inv-product-table td.inv-cat::before{content:attr(data-sku)}
+ .online-inventory .inv-product-table td.inv-branch::before,.online-inventory .inv-product-table td.inv-price::before{content:"· "}
+ .online-inventory .inv-product-table td.inv-act{order:7;margin-left:auto;display:flex;gap:6px}
+ .online-inventory .inv-product-table td.inv-act .inventory-icon-action{margin:0!important;width:34px;height:34px}
+ .online-inventory .inventory-pager{display:flex;align-items:center;justify-content:space-between;gap:8px}
+ .online-inventory .inventory-pager>button{width:auto;flex:none;padding:8px 14px}
+ /* Supplier list: rows become cards, actions in one line */
+ .sup-list-table thead{display:none}
+ .sup-list-table,.sup-list-table tbody{display:block;width:100%}
+ .sup-list-table tr{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:12px 14px;border-bottom:1px solid #f0f1f3}
+ .sup-list-table td{display:block;padding:0!important;border:0!important;min-width:0!important;font-size:12px;color:#667085}
+ .sup-list-table td:nth-child(1){flex:1 1 100%}
+ .sup-list-table td:nth-child(5){display:none}
+ .sup-list-table td:nth-child(3)::before{content:"· "}
+ .sup-list-table td:nth-child(6){margin-left:auto}
+ .sup-list-table .sup-actions{flex-wrap:nowrap;gap:5px}
+ .sup-activity{padding:4px 14px 12px}
+ .sup-activity li{flex-direction:column;gap:2px}
+ .sup-activity small{white-space:normal}
+}

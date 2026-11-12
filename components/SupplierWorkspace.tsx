@@ -133,7 +133,7 @@ export default function SupplierWorkspace({ embedded = false }: { embedded?: boo
           <p className="sup-muted sup-full">{role === 'admin' ? 'Suppliers you add are verified right away.' : 'New suppliers need Admin approval before they are verified.'}</p>
         </form>}
 
-        <div className="sup-table-wrap"><table className="sup-table">
+        <div className="sup-table-wrap"><table className="sup-table sup-list-table">
           <thead><tr><th>Supplier</th><th>Contact</th><th>Branch</th><th>Status</th><th>Submitted</th><th className="sup-right">Actions</th></tr></thead>
           <tbody>{visible.map(s => <tr key={s.id}>
             <td><button type="button" className="sup-name" onClick={() => { setSelected(s.id); setTab('items'); window.scrollTo(0, 0); }}>{s.name}</button><small>{itemCount(s.id)} catalog item{itemCount(s.id) === 1 ? '' : 's'}</small></td>
