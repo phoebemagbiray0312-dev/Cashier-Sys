@@ -141,6 +141,8 @@ Kasama: RF/RFP fund entries, disbursement requests, cash counts, turnovers, inci
 | "Unit costs" tab sa POS (lahat ng PO at gastos, may ✓ o kulang) | `components/UnitAudit.tsx`; nakakabit sa `app/page.tsx` → hanapin `<UnitAudit` |
 | POS window na may tabs (Overview, Quotation & COGS, Payment, Unit costs) | `app/page.tsx` → hanapin `pos-tabs`, `activePosTab` |
 | Badge sa sidebar ng Cashier: ilang PO ang kulang ng resibo | `app/page.tsx` → hanapin `poNeedsReceipt` |
+| RFP Disbursement Report na kapareho ng Google Sheet ni PB (Print / Download Excel), galing sa live na PO | `components/RFPDisbursementSheet.tsx`; button sa RFP page → hanapin `Disbursement Report (Sheet)` |
+| Date filter sa Purchase Orders | `components/PurchaseOrders.tsx` → `po-dates` |
 | Record Expense (RF) na may "For unit" para ikabit sa POS; may "Add unit expense" button sa POS | `app/page.tsx` → `createExpense` (`unitPosId`, `linkedPosId`) |
 | PO form ni PB: listahan ng bukas na unit sa lahat ng branch, o mag-type ng bagong unit | `app/page.tsx` → hanapin `Open units waiting for parts` |
 | PB puwedeng "All branches" (walang branch) sa database | `supabase/migrations/20261112_pb_all_branches.sql` |
