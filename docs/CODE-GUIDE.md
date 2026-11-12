@@ -126,6 +126,7 @@ Kasama: RF/RFP fund entries, disbursement requests, cash counts, turnovers, inci
 | Mas maliit na branch cards | `app/clean-ui.css` → hanapin `v9.36 — Compact` |
 | Itsura sa phone: Inventory (cards imbes na table), Supplier list, top bar | `app/clean-ui.css` → hanapin `v9.37` |
 | Spreadsheets & Documents nasa loob na ng system (hindi na lumilipat ng page) | `app/page.tsx` → hanapin `openStudio` at `studio-embedded`; `components/ReportStudio.tsx` → prop `onNavigate` |
+| Stock Transfer: nakikita ng Cashier/PB ang stock ng ibang branch (pangalan, SKU, dami lang) | `supabase/migrations/20261112_transfer_catalog.sql` → `cms_transfer_catalog`; ginagamit sa `components/StockTransferDialog.tsx` |
 
 ---
 
