@@ -583,3 +583,18 @@ button.inventory-branch-open:hover{text-decoration:underline}
  .sup-activity li{flex-direction:column;gap:2px}
  .sup-activity small{white-space:normal}
 }
+/* v9.37.1 — win over older inline/media rules on narrow screens */
+@media(max-width:760px){
+ .online-inventory .inventory-toolbar.inventory-main-toolbar{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;flex-direction:unset!important}
+ .online-inventory .inventory-toolbar.inventory-main-toolbar>button{width:100%!important;min-width:0;white-space:nowrap}
+ .online-inventory .inventory-filter-row{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .online-inventory .inventory-table-wrap.inv-product-wrap{overflow:visible!important;max-height:none!important;border:0!important;background:none!important;box-shadow:none!important}
+ .online-inventory table.inv-product-table{min-width:0!important;width:100%!important}
+ .online-inventory .inv-product-table tr{width:100%;box-sizing:border-box}
+ .online-inventory .inv-product-table td{white-space:normal!important;width:auto!important;min-width:0!important}
+ .online-inventory .inv-product-table td.inv-name{flex:1 1 0!important}
+ .online-inventory .inv-product-table td.inv-avail{flex:none}
+}
+@media(max-width:380px){
+ .online-inventory .inventory-toolbar.inventory-main-toolbar>button{font-size:12px;padding:9px 4px}
+}
