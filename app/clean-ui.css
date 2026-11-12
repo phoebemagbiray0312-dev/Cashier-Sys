@@ -604,3 +604,8 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .topbar .top-left h1,.topbar .top-left h2,.topbar .top-left strong,.topbar .top-left span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar .top-right{flex:none;min-width:0}
 @media(max-width:420px){.topbar .branch-select select{max-width:116px;padding-left:9px;padding-right:24px;font-size:12px}.topbar{gap:6px}}
+/* v9.37.2 — Spreadsheets/Documents inside the app: the page heading already names it */
+.studio-embedded .office-library-heading>div{display:none}
+.studio-embedded .office-library-heading{justify-content:flex-start;margin:0 0 12px;padding:0}
+.studio-embedded .office-workspace{padding:0}
+@media(max-width:760px){.studio-embedded .office-library-table{overflow-x:auto}}
