@@ -195,11 +195,18 @@ export function makeGeneratedSnapshot(db:Database,ids:string[],fund:Fund){
  const attachments:Receipt[]=[];
  const branches=BRANCHES.map(b=>b.id).filter(b=>lines.some(l=>l.branch===b));
  const sourceBalances:NonNullable<DisbursementRequest['sourceBalances']>={};
- for(const branch of (fund==='RFP'?BRANCHES.map(b=>b.id):branches)){
+ // v9.46: RFP is ONE pooled fund. Show each branch's expenses, but count the pool balance only once
+ // (on the first branch row) so totals don't multiply the fund by the number of branches.
+ const rfpRemaining=fund==='RFP'?balance(db,'UCM','RFP'):0;
+ BRANCHES.map(b=>b.id).filter(b=>fund==='RFP'||branches.includes(b)).forEach((branch,i)=>{
   const expenses=Math.round(lines.filter(l=>l.branch===branch).reduce((sum,l)=>sum+l.total,0)*100)/100;
+  if(fund==='RFP'){
+   sourceBalances[branch]=i===0?{fundBalance:Math.round((rfpRemaining+amount)*100)/100,expenses,remaining:Math.round(rfpRemaining*100)/100}:{fundBalance:0,expenses,remaining:0};
+   return;
+  }
   const remaining=balance(db,branch,fund);
   sourceBalances[branch]={fundBalance:Math.round((remaining+expenses)*100)/100,expenses,remaining};
- }
+ });
  return {lines,amount,attachments,branches,sourceBalances};
 }
 function validateSourceSelection(db:Database,u:User,fund:Fund,ids:string[],editingRequestId?:string){
