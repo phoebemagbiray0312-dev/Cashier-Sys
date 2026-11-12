@@ -761,3 +761,13 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .dsm-sign>div:first-child{display:flex;flex-direction:column;gap:2px;flex:1 1 220px}.dsm-sign strong{font-size:13px}.dsm-sign span{font-size:12px;color:#667085}
 .dsm-pad{display:flex;gap:8px;align-items:flex-end;flex:2 1 360px}.dsm-pad>*:first-child{flex:1}
 .dsm-sig-preview{display:flex;gap:10px;align-items:center}.dsm-sig-preview img{height:48px;max-width:220px;object-fit:contain;background:#fff;border:1px solid #e4e7ec;border-radius:8px;padding:4px}
+
+/* v9.48 — Parts Fund page order: balance → actions → purchase orders → totals → history */
+.rfp-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+.rfp-actions .button{min-height:42px}
+.rfp-actions .button-primary{padding-left:18px;padding-right:18px}
+.fund-banner+.rfp-actions+.po-wrap{margin-top:12px}
+/* Dashboard stat cards: same number size, titles on one line */
+.stat-card .stat-heading span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat-card .stat-amount{font-variant-numeric:tabular-nums}
+@media(max-width:560px){.rfp-actions{display:grid;grid-template-columns:1fr 1fr}.rfp-actions .button-primary{grid-column:1/-1}}
