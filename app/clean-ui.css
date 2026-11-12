@@ -438,3 +438,7 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .stock-popup .stock-popup-foot .stock-popup-secondary{background:#fff;border:1px solid var(--line);padding:0 14px}
 .stock-popup .stock-popup-foot .stock-popup-primary{background:#f3cf47;border:1px solid #f3cf47;padding:0 14px}
 .inventory-branch-metrics .branch-metric strong{display:block;margin-bottom:3px;font-size:15px}
+.online-inventory .inventory-branch-metrics .branch-metric{margin:0;padding:4px 6px;min-width:0;font-size:11px;line-height:1.25;overflow-wrap:anywhere}
+.online-inventory .inventory-branch-metrics{gap:4px}
+.online-inventory .inventory-branch-metrics .branch-metric-out strong{color:#b42318}
+.online-inventory .inventory-branch-metrics .branch-metric-low strong{color:#b54708}
