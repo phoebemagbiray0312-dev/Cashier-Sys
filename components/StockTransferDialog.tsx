@@ -33,7 +33,8 @@ export default function StockTransferDialog({ mode, onClose, onChanged }: { mode
     const db = getSupabaseClient();
     const [a, b] = await Promise.all([
       db.from('cms_stock_requests').select('id,product_name,product_sku,from_branch,to_branch,quantity,status,reason,created_at,requested_by').order('created_at', { ascending: false }).limit(200),
-      db.from('cms_products').select('sku,name,branch_id,stock_qty').in('branch_id', UC).order('name').range(0, 1999),
+      // v9.38: RPC so cashiers/PB can see what other branches can send (products RLS is own-branch only)
+      db.rpc('cms_transfer_catalog'),
     ]);
     if (a.error || b.error) throw new Error('Could not load stock transfers. Please try again.');
     setRows((a.data || []) as RequestRow[]); setProducts((b.data || []) as Product[]);
