@@ -609,3 +609,8 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .studio-embedded .office-library-heading{justify-content:flex-start;margin:0 0 12px;padding:0}
 .studio-embedded .office-workspace{padding:0}
 @media(max-width:760px){.studio-embedded .office-library-table{overflow-x:auto}}
+@media(max-width:760px){.online-inventory .inventory-filter-row>input{grid-column:1/-1!important;width:100%!important;max-width:none!important}}
+@media(max-width:420px){
+ .online-inventory .inventory-filter-row{grid-template-columns:1fr!important}
+ .online-inventory .inventory-toolbar.inventory-main-toolbar>button{white-space:normal;line-height:1.2}
+}
