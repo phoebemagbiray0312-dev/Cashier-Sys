@@ -504,3 +504,18 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .xfer .xfer-reject input{flex:1;min-width:0;height:36px;border:1px solid #fecdca;border-radius:9px;padding:0 10px;font:inherit;font-size:12px;outline:none}
 .xfer .xfer-empty{text-align:center;color:#8992a0;font-size:13px;padding:28px 10px}
 @media(max-width:560px){.xfer-scrim{padding:0;align-items:stretch}.xfer{border-radius:0;min-height:100%}.xfer .xfer-route{grid-template-columns:1fr}.xfer .xfer-arrow{transform:rotate(90deg);margin:0 auto}.xfer .xfer-row{grid-template-columns:1fr}}
+/* v9.35.1 — searchable item picker in Stock Transfer */
+.xfer .xfer-combo{position:relative}
+.xfer .xfer-combo-icon{position:absolute;left:12px;top:13px;color:#98a2b3;pointer-events:none}
+.xfer .xfer-field .xfer-combo input{padding-left:34px;padding-right:34px}
+.xfer .xfer-combo-clear{position:absolute;right:6px;top:6px;width:30px;height:30px;display:grid;place-items:center;border:0;border-radius:7px;background:transparent;color:#667085;cursor:pointer;padding:0}
+.xfer .xfer-combo-clear:hover{background:#f2f4f7}
+.xfer .xfer-combo-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:5;list-style:none;margin:0;padding:4px;max-height:280px;overflow:auto;background:#fff;border:1px solid #e4e7ec;border-radius:10px;box-shadow:0 12px 28px rgba(16,24,40,.14)}
+.xfer .xfer-combo-list button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;border:0;background:transparent;border-radius:7px;padding:8px 10px;font:inherit;font-size:13px;font-weight:500;color:#273044;cursor:pointer}
+.xfer .xfer-combo-list button.hi{background:#fdf6dd}
+.xfer .xfer-combo-name{display:flex;flex-direction:column;min-width:0}
+.xfer .xfer-combo-name small{font-size:11px;color:#98a2b3;font-weight:500}
+.xfer .xfer-combo-list b{flex:none;font-size:12px;color:#067647;background:#ecfdf3;border-radius:12px;padding:2px 8px}
+.xfer .xfer-combo-list b.low{color:#b54708;background:#fffaeb}
+.xfer .xfer-combo-none{padding:10px;font-size:12px;color:#98a2b3;text-align:center}
+.xfer{overflow:visible}

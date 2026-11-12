@@ -1,7 +1,7 @@
 'use client';
 /** v9.35 — Stock transfers between branches, shown as a popup inside Inventory (no page change). */
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Check, PackageCheck, Send, Truck, X } from 'lucide-react';
+import { ArrowRight, Check, PackageCheck, Search, Send, Truck, X } from 'lucide-react';
 import { getSupabaseClient } from '@/lib/supabase-client';
 import { getCurrentStaff, type StaffIdentity } from '@/lib/supabase-auth';
 
@@ -21,6 +21,7 @@ export default function StockTransferDialog({ mode, onClose, onChanged }: { mode
   const [source, setSource] = useState('UCQC'); const [dest, setDest] = useState('UCM');
   const [sku, setSku] = useState(''); const [qty, setQty] = useState('1'); const [reason, setReason] = useState('Branch stock replenishment');
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'released' | 'received' | 'rejected'>('all');
+  const [itemQuery, setItemQuery] = useState(''); const [itemOpen, setItemOpen] = useState(false); const [itemHi, setItemHi] = useState(0);
   const [rejecting, setRejecting] = useState(''); const [rejectNote, setRejectNote] = useState('');
 
   const admin = staff?.role === 'admin';
@@ -50,6 +51,11 @@ export default function StockTransferDialog({ mode, onClose, onChanged }: { mode
   const sourceProducts = useMemo(() => products.filter(p => p.branch_id === source && Number(p.stock_qty) > 0), [products, source]);
   const destSkus = useMemo(() => new Set(products.filter(p => p.branch_id === dest).map(p => p.sku)), [products, dest]);
   const chosen = sourceProducts.find(p => p.sku === sku);
+  const matches = useMemo(() => {
+    const words = itemQuery.toLowerCase().split(/\s+/).filter(Boolean);
+    return sourceProducts.filter(p => words.every(w => (p.name + ' ' + p.sku).toLowerCase().includes(w))).slice(0, 60);
+  }, [sourceProducts, itemQuery]);
+  const pickItem = (p: Product) => { setSku(p.sku); setItemQuery(''); setItemOpen(false); };
   const n = Number(qty);
   const qtyError = !sku ? '' : !Number.isFinite(n) || n <= 0 ? 'Enter a quantity above 0.' : chosen && n > Number(chosen.stock_qty) ? `Only ${chosen.stock_qty} available at ${source}.` : !destSkus.has(sku) ? `${BRANCHES[dest]} doesn't have this item registered yet.` : '';
 
@@ -91,11 +97,35 @@ export default function StockTransferDialog({ mode, onClose, onChanged }: { mode
 
       {!staff ? <p className="xfer-empty">Sign in with a staff account to request stock.</p> : tab === 'new' ? <div className="xfer-body">
         <div className="xfer-route">
-          <label className="xfer-field"><span>From (sends the stock)</span><select value={source} onChange={e => { setSource(e.target.value); setSku(''); }}>{UC.filter(b => b !== dest).map(b => <option key={b} value={b}>{BRANCHES[b]}</option>)}</select></label>
+          <label className="xfer-field"><span>From (sends the stock)</span><select value={source} onChange={e => { setSource(e.target.value); setSku(''); setItemQuery(''); }}>{UC.filter(b => b !== dest).map(b => <option key={b} value={b}>{BRANCHES[b]}</option>)}</select></label>
           <ArrowRight size={18} className="xfer-arrow" aria-hidden="true" />
           <label className="xfer-field"><span>To (receives the stock)</span><select value={admin ? dest : (myBranch || dest)} disabled={!admin} onChange={e => { setDest(e.target.value); if (e.target.value === source) setSource(UC.find(b => b !== e.target.value) || source); }}>{UC.filter(b => admin || b === myBranch).map(b => <option key={b} value={b}>{BRANCHES[b]}</option>)}</select></label>
         </div>
-        <label className="xfer-field"><span>Item</span><select value={sku} onChange={e => setSku(e.target.value)}><option value="">{sourceProducts.length ? `Choose an item (${sourceProducts.length} in stock at ${source})` : `No items in stock at ${source}`}</option>{sourceProducts.map(p => <option key={p.sku} value={p.sku}>{p.name} · {p.stock_qty} available{destSkus.has(p.sku) ? '' : ' · not registered at ' + dest}</option>)}</select></label>
+        <div className="xfer-field"><span>Item</span>
+          <div className="xfer-combo" onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setItemOpen(false); }}>
+            <Search size={15} className="xfer-combo-icon" aria-hidden="true" />
+            <input role="combobox" aria-expanded={itemOpen} aria-controls="xfer-items" aria-label="Search item"
+              value={itemOpen || !chosen ? itemQuery : `${chosen.name} · ${chosen.stock_qty} available`}
+              placeholder={sourceProducts.length ? `Search ${sourceProducts.length} items in stock at ${BRANCHES[source]}…` : `No items in stock at ${BRANCHES[source]}`}
+              disabled={!sourceProducts.length}
+              onFocus={() => { setItemOpen(true); setItemHi(0); }}
+              onChange={e => { setItemQuery(e.target.value); setItemOpen(true); setItemHi(0); if (sku) setSku(''); }}
+              onKeyDown={e => {
+                if (e.key === 'ArrowDown') { e.preventDefault(); setItemOpen(true); setItemHi(h => Math.min(h + 1, matches.length - 1)); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); setItemHi(h => Math.max(h - 1, 0)); }
+                else if (e.key === 'Enter' && itemOpen && matches[itemHi]) { e.preventDefault(); pickItem(matches[itemHi]); }
+                else if (e.key === 'Escape' && itemOpen) { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); setItemOpen(false); }
+              }} />
+            {sku && !itemOpen && <button type="button" className="xfer-combo-clear" aria-label="Clear item" onClick={() => { setSku(''); setItemQuery(''); }}><X size={14} /></button>}
+            {itemOpen && sourceProducts.length > 0 && <ul id="xfer-items" role="listbox" className="xfer-combo-list">
+              {matches.length === 0 ? <li className="xfer-combo-none">No item matches “{itemQuery}”.</li> : matches.map((p, i) => <li key={p.sku} role="option" aria-selected={i === itemHi}>
+                <button type="button" tabIndex={-1} className={i === itemHi ? 'hi' : ''} onMouseEnter={() => setItemHi(i)} onMouseDown={e => e.preventDefault()} onClick={() => pickItem(p)}>
+                  <span className="xfer-combo-name">{p.name}<small>{p.sku}{destSkus.has(p.sku) ? '' : ' · not registered at ' + dest}</small></span>
+                  <b className={Number(p.stock_qty) <= 5 ? 'low' : ''}>{Number(p.stock_qty).toLocaleString('en-PH')}</b>
+                </button></li>)}
+              {matches.length === 60 && <li className="xfer-combo-none">Type more to narrow the list…</li>}
+            </ul>}
+          </div></div>
         <div className="xfer-row">
           <label className="xfer-field"><span>Quantity</span><input type="number" min="0.001" step="0.001" value={qty} onChange={e => setQty(e.target.value)} /></label>
           <label className="xfer-field xfer-grow"><span>Reason</span><input value={reason} maxLength={500} onChange={e => setReason(e.target.value)} placeholder="e.g. Branch stock replenishment" /></label>
