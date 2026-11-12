@@ -143,6 +143,9 @@ Kasama: RF/RFP fund entries, disbursement requests, cash counts, turnovers, inci
 | Badge sa sidebar ng Cashier: ilang PO ang kulang ng resibo | `app/page.tsx` → hanapin `poNeedsReceipt` |
 | RFP Disbursement Report na kapareho ng Google Sheet ni PB (Print / Download Excel), galing sa live na PO | `components/RFPDisbursementSheet.tsx`; button sa RFP page → hanapin `Disbursement Report (Sheet)` |
 | Date filter sa Purchase Orders | `components/PurchaseOrders.tsx` → `po-dates` |
+| Parts Fund page: balance → mga button → Purchase Orders → totals → buong history (v9.48) | `app/page.tsx` → hanapin `rfp-actions`; styles sa `app/clean-ui.css` → `v9.48` |
+| Record Parts: iisang Supplier kada PO (nasa Part 1, kusang kinokopya sa ibang part) | `app/page.tsx` → hanapin `one PO = one supplier` |
+| PB: walang POS & Sales sa Reports, puro parts ang Dashboard | `app/page.tsx` → hanapin `pbPoNoReceipt`, `user.role==='pb'?[]:['pos']` |
 | Record Expense (RF) na may "For unit" para ikabit sa POS; may "Add unit expense" button sa POS | `app/page.tsx` → `createExpense` (`unitPosId`, `linkedPosId`) |
 | PO form ni PB: listahan ng bukas na unit sa lahat ng branch, o mag-type ng bagong unit | `app/page.tsx` → hanapin `Open units waiting for parts` |
 | PB puwedeng "All branches" (walang branch) sa database | `supabase/migrations/20261112_pb_all_branches.sql` |
