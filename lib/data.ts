@@ -176,15 +176,19 @@ export const STORAGE_KEY = 'underchargers-fund-management-demo-v1';
 export function loadDB():Database {if(typeof window==='undefined')return createSeed();try{const s=localStorage.getItem(STORAGE_KEY);if(s){const d=JSON.parse(s) as Database;if(d?.settings?.rfBase && Array.isArray(d.users) && Array.isArray(d.pos) && Array.isArray(d.fundEntries)){const legacy=['Shop Supplies','Cleaning','Maintenance','Other'];const categories=d.settings.categories||[];d.settings.categories=[...RF_CATEGORIES,...categories.filter(c=>!legacy.includes(c)&&!RF_CATEGORIES.some(a=>a===c))];d.settings.signatories=d.settings.signatories||{checked:'',approved:''};d.turnovers=(d.turnovers||[]).map(t=>({...t,kind:t.kind||'Sales',actual:t.actual??t.amount}));d.inventory=d.inventory||[];d.stockMovements=d.stockMovements||[];d.stockRequests=d.stockRequests||[];d.stockReceipts=d.stockReceipts||[];d.stockIssues=d.stockIssues||[];d.deletedPOSDrafts=d.deletedPOSDrafts||[];d.disbursementRequests=d.disbursementRequests||[];d.terminalEvents=d.terminalEvents||[];d.terminalSettlements=d.terminalSettlements||[];const cleaned=removeLegacySeedFixtures(removeUntouchedDemoProducts(d));const officeRaw=localStorage.getItem('uc_report_studio_v1');let hasFiles=false;try{hasFiles=Array.isArray(JSON.parse(officeRaw||'[]'))&&JSON.parse(officeRaw||'[]').length>0;}catch{hasFiles=!!officeRaw;}return removeEmptyDemoAccounts(cleaned,hasFiles);}}}catch{}return createSeed();}
 export function storeDB(db:Database):boolean {try{localStorage.setItem(STORAGE_KEY,JSON.stringify(db));return true;}catch{return false;}}
 export const expenseGross=(entry:Pick<FundEntry,'amount'|'onlineCharge'>)=>Math.round((entry.amount+(entry.onlineCharge||0))*100)/100;
+/** v9.40: RFP is ONE Parts Buyer fund for all branches (UC + Mastermind). Each RFP entry keeps its
+ * branch for reporting, but the balance, starting amount and replenishment are pooled. RF stays per branch. */
+export const rfpPoolBase=(db:Database)=>Object.values(db.settings.rfpBase||{}).reduce((n,v)=>n+Number(v||0),0);
+export const fundBase=(db:Database,branch:BranchId,fund:Fund)=>fund==='RF'?(db.settings.rfBase[branch]||0):rfpPoolBase(db);
 export function balance(db:Database,branch:BranchId,fund:Fund):number {
- const initial=(fund==='RF'?db.settings.rfBase:db.settings.rfpBase)[branch]||0;
- return db.fundEntries.filter(e=>e.branch===branch&&e.fund===fund&&e.status!=='Rejected').reduce((sum,e)=>sum+(e.kind==='replenishment'?(e.status==='Approved'?e.amount:0):-expenseGross(e)),initial);
+ const initial=fundBase(db,branch,fund);
+ return db.fundEntries.filter(e=>(fund==='RFP'||e.branch===branch)&&e.fund===fund&&e.status!=='Rejected').reduce((sum,e)=>sum+(e.kind==='replenishment'?(e.status==='Approved'?e.amount:0):-expenseGross(e)),initial);
 }
 /** Only replace cash that has already been spent and not yet replenished. 
  * Pending replenishments are not included in the cash-on-hand balance; a second
  * request is blocked in the UI until the previous one is decided. */
 export function replenishmentDue(db:Database, branch:BranchId, fund:Fund):number {
- const target=(fund==='RF'?db.settings.rfBase:db.settings.rfpBase)[branch]||0;
+ const target=fundBase(db,branch,fund);
  return Math.round(Math.max(0,target-balance(db,branch,fund))*100)/100;
 }
 
@@ -194,8 +198,10 @@ export function branchFundTotals(db:Database,fund:Fund){
   const target=(fund==='RF'?db.settings.rfBase:db.settings.rfpBase)[b.id]||0;
   const expenses=db.fundEntries.filter(e=>e.branch===b.id&&e.fund===fund&&e.kind==='expense'&&e.status!=='Rejected').reduce((n,e)=>n+expenseGross(e),0);
   const received=db.fundEntries.filter(e=>e.branch===b.id&&e.fund===fund&&e.kind==='replenishment'&&e.status==='Approved').reduce((n,e)=>n+e.amount,0);
-  return {branch:b.id,name:b.name,target,expenses,received,remaining:balance(db,b.id,fund),toReplenish:replenishmentDue(db,b.id,fund)};
+  // RFP rows only show spending per branch; the pooled target/remaining live in the grand total
+  return fund==='RFP'?{branch:b.id,name:b.name,target:0,expenses,received,remaining:0,toReplenish:0}:{branch:b.id,name:b.name,target,expenses,received,remaining:balance(db,b.id,fund),toReplenish:replenishmentDue(db,b.id,fund)};
  });
+ if(fund==='RFP'){const sum=(k:'expenses'|'received')=>rows.reduce((n,r)=>n+r[k],0);return {rows,grand:{target:rfpPoolBase(db),expenses:sum('expenses'),received:sum('received'),remaining:balance(db,'UCM','RFP'),toReplenish:replenishmentDue(db,'UCM','RFP')}};}
  return {rows,grand:rows.reduce((s,r)=>({target:s.target+r.target,expenses:s.expenses+r.expenses,received:s.received+r.received,remaining:s.remaining+r.remaining,toReplenish:s.toReplenish+r.toReplenish}),{target:0,expenses:0,received:0,remaining:0,toReplenish:0})};
 }
 
@@ -628,8 +634,8 @@ export function assignConsumedStockToPOS(db:Database,branch:BranchId,rawPlate:st
  * Selected-period expenses and approved replenishments reconcile exactly to the reported closing.
  * The fund target is the configured starting/target fund balance. */
 export function disbursementSummary(db:Database,branch:BranchId,fund:Fund,from='',to=''){
- const base=(fund==='RF'?db.settings.rfBase:db.settings.rfpBase)[branch]||0;
- const rows=db.fundEntries.filter(e=>e.branch===branch&&e.fund===fund&&e.status!=='Rejected');
+ const base=fundBase(db,branch,fund);
+ const rows=db.fundEntries.filter(e=>(fund==='RFP'||e.branch===branch)&&e.fund===fund&&e.status!=='Rejected');
  const signed=(e:FundEntry)=>e.kind==='expense'?-expenseGross(e):e.status==='Approved'?e.amount:0;
  const opening=base+rows.filter(e=>!!from&&e.date<from).reduce((n,e)=>n+signed(e),0);
  const period=rows.filter(e=>reportDateMatch(e.date,from,to));

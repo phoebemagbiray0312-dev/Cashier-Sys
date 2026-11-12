@@ -1,5 +1,5 @@
 import {
-  BRANCHES,BRANCH_NAME,branchFundTotals,balance,replenishmentDue,categoryTotals,datePH,disbursementSummary,pesos,posCOGS,posCostBreakdown,
+  BRANCHES,BRANCH_NAME,branchFundTotals,balance,rfpPoolBase,replenishmentDue,categoryTotals,datePH,disbursementSummary,pesos,posCOGS,posCostBreakdown,
   posTotal,paidTotal,posClosedDate,posLineTotal,reportDateMatch,normalizePlate,pendingRFPDisbursementRows,
   type Audit,type BranchId,type Count,type Database,type Fund,type FundEntry,type POS,type Turnover
 } from './data';
@@ -200,7 +200,7 @@ export function printPBDisbursement(db:Database,branch:BranchId,preparedById?:st
  const activeRequest=db.fundEntries.filter(e=>e.branch===branch&&e.fund==='RFP'&&e.kind==='replenishment'&&e.status==='Pending').sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0];
  const items=pendingRFPDisbursementRows(db,branch).filter(e=>!activeRequest||e.createdAt<=activeRequest.createdAt);
  const amount=items.reduce((n,e)=>n+e.amount,0);
- const currentFund=db.settings.rfpBase[branch]||0;
+ const currentFund=rfpPoolBase(db);
  const cashOnHand=balance(db,branch,'RFP');const due=activeRequest?.amount??replenishmentDue(db,branch,'RFP');const request=findReplenishment(db,branch,'RFP');
  const rows=items.map(e=>[
   displayed(datePH(e.date)),displayed(e.no),displayed(e.description),displayed(e.payee),displayed(e.plate),

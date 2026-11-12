@@ -129,6 +129,7 @@ Kasama: RF/RFP fund entries, disbursement requests, cash counts, turnovers, inci
 | Stock Transfer: nakikita ng Cashier/PB ang stock ng ibang branch (pangalan, SKU, dami lang) | `supabase/migrations/20261112_transfer_catalog.sql` → `cms_transfer_catalog`; ginagamit sa `components/StockTransferDialog.tsx` |
 | Cashier puwede nang magdagdag/mag-edit ng supplier at catalog item (For Review hanggang i-approve ng Admin) | `supabase/migrations/20261112_cashier_suppliers.sql`; `components/SupplierWorkspace.tsx` → `canAdd`, `canEdit` |
 | Mas maikling RF number (hal. `UCM-RF-00000001`) | `lib/data.ts` → hanapin `RF numbers are short` |
+| RFP = iisang pondo ng Parts Buyer para sa lahat ng branch (UC + Mastermind); bawat bili may tag pa rin kung aling branch | `lib/data.ts` → `rfpPoolBase`, `fundBase`, `balance`; Settings → `saveInitialFund` sa `app/page.tsx` |
 
 ---
 
