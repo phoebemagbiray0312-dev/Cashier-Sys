@@ -784,3 +784,12 @@ button.inventory-branch-open:hover{text-decoration:underline}
 @media(min-width:761px){.purchase-line+.purchase-line .purchase-line-fields{grid-template-columns:minmax(0,2fr) minmax(0,.8fr) minmax(0,1fr)!important}}
 /* v9.48 — status pills never wrap */
 .status-pill,.badge,.pill{white-space:nowrap}
+/* v9.48.3 — Parts Fund on phones: buttons fit, compact steps */
+.rfp-actions .button{min-width:0;max-width:100%}
+@media(max-width:560px){
+ .rfp-actions{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ .rfp-actions .button{white-space:normal;line-height:1.2;text-align:center;justify-content:center;padding-left:8px;padding-right:8px;font-size:13px}
+ .po-steps{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ .po-steps li{flex-direction:column;align-items:center;text-align:center;gap:4px;padding:8px 4px}
+ .po-steps li span{font-size:0;line-height:1.2}.po-steps li span strong{font-size:11px}
+}
