@@ -735,3 +735,9 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .pos-tabs button{flex:none;display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:10px 12px;margin-bottom:-1px;border-bottom:2px solid transparent;font:inherit;font-size:13px;font-weight:650;color:#667085;cursor:pointer;border-radius:0}
 .pos-tabs button.on{color:#1f2937;border-bottom-color:#d9a514}
 .pos-tabs button b{font-size:11px;background:#fff6da;color:#8a6500;border-radius:10px;padding:1px 7px}
+/* v9.44 — Purchase Orders date filter */
+.po-dates{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:-2px 0 12px}
+.po-dates label{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#475467}
+.po-dates input{height:34px;border:1px solid #dfe3e9;border-radius:8px;padding:0 8px;font:inherit;font-size:13px;color:#1f2937}
+.po-dates-total{font-size:12px;font-weight:700;color:#344054;background:#f2f4f7;border-radius:20px;padding:5px 10px}
+@media(max-width:560px){.po-dates label{flex:1 1 130px}.po-dates input{flex:1;min-width:0}}

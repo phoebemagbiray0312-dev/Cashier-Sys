@@ -42,6 +42,9 @@ export default function PurchaseOrders({ purchases, pos, role, branch, userName,
   const [openNo, setOpenNo] = useState('');
   const [filter, setFilter] = useState<'all' | Stage>('all');
   const [query, setQuery] = useState('');
+  // v9.44: filter by date (PO transaction date)
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
   const [preview, setPreview] = useState<Doc | null>(null);
   const [msg, setMsg] = useState('');
   // receipt form
@@ -72,9 +75,21 @@ export default function PurchaseOrders({ purchases, pos, role, branch, userName,
     }).sort((a, b) => (a.stage === 'done' ? 1 : 0) - (b.stage === 'done' ? 1 : 0) || b.date.localeCompare(a.date) || b.no.localeCompare(a.no));
   }, [purchases, pos, branch, records]);
 
-  const count = (s: 'all' | Stage) => s === 'all' ? orders.length : orders.filter(o => o.stage === s).length;
+  const inDates = (o: PO) => (!from || o.date >= from) && (!to || o.date <= to);
+  const dated = orders.filter(inDates);
+  const count = (s: 'all' | Stage) => s === 'all' ? dated.length : dated.filter(o => o.stage === s).length;
+  const ph = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(d);
+  const today = ph(new Date());
+  const preset = (k: 'today' | 'week' | 'month' | 'all') => {
+    if (k === 'all') { setFrom(''); setTo(''); return; }
+    const now = new Date(today + 'T00:00:00');
+    if (k === 'today') { setFrom(today); setTo(today); return; }
+    if (k === 'week') { const d = new Date(now); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); setFrom(ph(d)); setTo(today); return; }
+    setFrom(today.slice(0, 8) + '01'); setTo(today);
+  };
+  const activePreset = !from && !to ? 'all' : from === today && to === today ? 'today' : to === today && from === today.slice(0, 8) + '01' ? 'month' : '';
   const q = query.trim().toLowerCase();
-  const shown = orders.filter(o => (filter === 'all' || o.stage === filter) && (!q || [o.no, o.plate, o.car, o.supplier, ...o.lines.map(l => l.description)].join(' ').toLowerCase().includes(q)));
+  const shown = dated.filter(o => (filter === 'all' || o.stage === filter) && (!q || [o.no, o.plate, o.car, o.supplier, ...o.lines.map(l => l.description)].join(' ').toLowerCase().includes(q)));
   const po = orders.find(o => o.no === openNo);
 
   function open(no: string) { setOpenNo(no); setMsg(''); setFile(null); setRef(''); setReplacing(false); setRefundOpen(false); const o = orders.find(x => x.no === no); setAmount(o ? String(o.total) : ''); window.scrollTo({ top: 0 }); }
@@ -127,7 +142,13 @@ export default function PurchaseOrders({ purchases, pos, role, branch, userName,
         <div className="po-chips">{(['all', 'receipt', 'problem', 'done'] as const).map(s => <button key={s} type="button" className={'po-chip' + (filter === s ? ' on' : '')} onClick={() => setFilter(s)}>{s === 'all' ? 'All' : STAGE[s].label}<b>{count(s)}</b></button>)}</div>
         <label className="po-search"><Search size={15} /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search PO, plate, supplier or part" /></label>
       </div>
-      {shown.length === 0 ? <p className="po-empty">{orders.length ? 'No purchase orders match.' : 'No purchase orders yet. They appear here when the Parts Buyer records a parts purchase.'}</p>
+      <div className="po-dates" role="group" aria-label="Filter by date">
+        {([['all', 'All dates'], ['today', 'Today'], ['week', 'This week'], ['month', 'This month']] as const).map(([k, l]) => <button key={k} type="button" className={'po-chip' + (activePreset === k ? ' on' : '')} onClick={() => preset(k)}>{l}</button>)}
+        <label>From<input type="date" value={from} max={to || undefined} onChange={e => setFrom(e.target.value)} /></label>
+        <label>To<input type="date" value={to} min={from || undefined} onChange={e => setTo(e.target.value)} /></label>
+        {(from || to) && <span className="po-dates-total">{dated.length} PO{dated.length === 1 ? '' : 's'} · {pesos(dated.reduce((n, o) => n + o.total, 0))}</span>}
+      </div>
+      {shown.length === 0 ? <p className="po-empty">{orders.length ? (from || to ? 'No purchase orders on these dates.' : 'No purchase orders match.') : 'No purchase orders yet. They appear here when the Parts Buyer records a parts purchase.'}</p>
         : <ul className="po-list">{shown.map(o => <li key={o.no}><button type="button" onClick={() => open(o.no)}>
           <span className="po-col-main"><strong>{o.plate || 'No plate'}{o.car ? <em> · {o.car}</em> : null}</strong><small>{o.no} · {o.supplier} · {o.lines.length} part{o.lines.length === 1 ? '' : 's'}{branch === 'ALL' ? ` · ${o.branch}` : ''}</small></span>
           <span className="po-col-amt">{pesos(o.total)}</span>
