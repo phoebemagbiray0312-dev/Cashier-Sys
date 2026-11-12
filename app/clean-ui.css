@@ -400,3 +400,41 @@
 .inventory-toolbar .stock-chip-ok.active{border-color:#12b76a;box-shadow:inset 0 0 0 1px #12b76a;background:#ecfdf3}
 .inventory-toolbar .stock-chip-low.active{border-color:#f79009;box-shadow:inset 0 0 0 1px #f79009;background:#fffaeb}
 .inventory-toolbar .stock-chip-zero.active{border-color:#f04438;box-shadow:inset 0 0 0 1px #f04438;background:#fef3f2}
+
+/* v9.34 — Clickable stock summary metrics + popup */
+.inventory-branch-card{cursor:default}
+.inventory-branch-metrics .branch-metric{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:0;background:none;padding:6px 8px;margin:-6px -8px;border-radius:8px;font:inherit;font-size:11px;color:inherit;cursor:pointer;text-align:left}
+.inventory-branch-metrics .branch-metric:hover{background:rgba(0,0,0,.05)}
+.inventory-branch-metrics .branch-metric-out strong{color:#b42318}
+.inventory-branch-metrics .branch-metric-low strong{color:#b54708}
+.inventory-branch-metrics .branch-metric:focus-visible{outline:2px solid #e6ba38}
+button.inventory-branch-open{border:0;background:none;padding:0;font:inherit;cursor:pointer;text-align:left}
+button.inventory-branch-open:hover{text-decoration:underline}
+.stock-popup-scrim{position:fixed;inset:0;z-index:80;background:rgba(16,18,22,.38);display:grid;place-items:center;padding:16px}
+.stock-popup{background:#fff;border-radius:18px;width:min(760px,100%);max-height:min(82vh,760px);display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(16,18,22,.28);overflow:hidden}
+.stock-popup-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px 20px 12px}
+.stock-popup-head>div{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center}
+.stock-popup-head h3{margin:0;font-size:17px}
+.stock-popup-head p{grid-column:2;margin:2px 0 0;font-size:12px;color:#777d88}
+.stock-popup-dot{width:10px;height:10px;border-radius:999px}
+.stock-popup-dot.stock-out{background:#f04438}.stock-popup-dot.stock-low{background:#f79009}.stock-popup-dot.stock-ok{background:#12b76a}
+.stock-popup-close{border:0;background:#f3f4f6;width:32px;height:32px;border-radius:999px;font-size:20px;line-height:1;cursor:pointer;color:#525864}
+.stock-popup-tools{padding:0 20px 12px}
+.stock-popup-tools input{width:100%;height:40px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font:inherit;font-size:13px}
+.stock-popup-body{overflow:auto;border-top:1px solid var(--line);border-bottom:1px solid var(--line);flex:1}
+.stock-popup-body table{width:100%;border-collapse:collapse;font-size:13px}
+.stock-popup-body th{position:sticky;top:0;background:#fafbfc;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:#777d88;padding:9px 16px;border-bottom:1px solid var(--line)}
+.stock-popup-body td{padding:10px 16px;border-bottom:1px solid #f0f1f3}
+.stock-popup-body .num{text-align:right}
+.stock-popup-empty{margin:0;padding:36px 20px;text-align:center;color:#777d88;font-size:13px}
+.stock-popup-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px}
+.stock-popup-foot button{height:38px;padding:0 14px;border-radius:10px;font:inherit;font-size:13px;font-weight:650;cursor:pointer}
+.stock-popup-secondary{border:1px solid var(--line);background:#fff}
+.stock-popup-primary{border:1px solid #f3cf47;background:#f3cf47}
+@media(max-width:640px){.stock-popup-body th:nth-child(3),.stock-popup-body td:nth-child(3),.stock-popup-body th:nth-child(5),.stock-popup-body td:nth-child(5){display:none}}
+/* Higher specificity than the inventory component's generic yellow button rule */
+.inventory-branch-card .inventory-branch-open{background:none;border:0;padding:0;font-weight:700;color:#8a6200;border-radius:0}
+.stock-popup .stock-popup-close{background:#f3f4f6;padding:0;border-radius:999px;font-weight:400}
+.stock-popup .stock-popup-foot .stock-popup-secondary{background:#fff;border:1px solid var(--line);padding:0 14px}
+.stock-popup .stock-popup-foot .stock-popup-primary{background:#f3cf47;border:1px solid #f3cf47;padding:0 14px}
+.inventory-branch-metrics .branch-metric strong{display:block;margin-bottom:3px;font-size:15px}
