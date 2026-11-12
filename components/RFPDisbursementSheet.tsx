@@ -87,11 +87,21 @@ ${rows.length ? '' : '<tr><td colspan="12" class="c" style="padding:14px;color:#
 .ds-s .cy td:first-child,.ds-s .cy td.n{background:#00ffff}.ds-s .yl td:first-child,.ds-s .yl td.n{background:#ffff00}
 .ds-sig{border-collapse:collapse;font-size:11px;font-weight:700;margin-left:auto}.ds-sig td{padding:10px 12px}`;
 
+  /** v9.45.1: print from a hidden frame on the same page (pop-up windows are often blocked) */
   function print() {
-    const w = window.open('', '_blank');
-    if (!w) { window.alert('Please allow pop-ups to print the report.'); return; }
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"/><title>${esc(title)}</title><style>@page{size:A4 landscape;margin:8mm}body{margin:0;padding:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact}${sheetCss}.bar{position:fixed;right:12px;bottom:12px}.bar button{background:#facc15;border:0;padding:10px 16px;border-radius:6px;font-weight:700;cursor:pointer}@media print{.bar{display:none}}</style></head><body>${sheetHtml()}<div class="bar"><button onclick="window.print()">Print / Save as PDF</button></div></body></html>`);
-    w.document.close(); w.focus();
+    const doc = `<!doctype html><html><head><meta charset="utf-8"/><title>${esc(title)}</title><style>@page{size:A4 landscape;margin:8mm}html,body{margin:0;background:#fff}body{padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}${sheetCss}</style></head><body>${sheetHtml()}</body></html>`;
+    document.getElementById('rfp-ds-print')?.remove();
+    const frame = document.createElement('iframe');
+    frame.id = 'rfp-ds-print';
+    frame.setAttribute('aria-hidden', 'true');
+    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    document.body.appendChild(frame);
+    const w = frame.contentWindow;
+    if (!w) { window.alert('Printing is not available in this browser.'); return; }
+    w.document.open(); w.document.write(doc); w.document.close();
+    const go = () => { try { w.focus(); w.print(); } catch { window.alert('Could not open the print window. Try Download Excel, or open the system in Chrome.'); } };
+    // wait for layout/fonts before printing
+    if (w.document.readyState === 'complete') setTimeout(go, 250); else frame.onload = () => setTimeout(go, 250);
   }
 
   async function downloadExcel() {
