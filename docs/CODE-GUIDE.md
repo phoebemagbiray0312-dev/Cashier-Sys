@@ -1,4 +1,4 @@
-# Code Guide — Saan makikita ang code (v9.26 – v9.31)
+# Code Guide — Saan makikita ang code (v9.26 – v9.35)
 
 Gabay ito sa mga binago noong **Nov 9–11, 2026** para makita mo kung saan nakalagay ang bawat bahagi ng system.
 Puwede mong buksan ang bawat file sa GitHub: `https://github.com/phoebemagbiray0312-dev/Cashier-Sys/blob/main/<path>`
@@ -103,6 +103,18 @@ Kasama: RF/RFP fund entries, disbursement requests, cash counts, turnovers, inci
 | My Profile dialog + `StaffAvatar` (bilog na picture o unang letra) | `components/ProfileDialog.tsx` |
 | Pagbukas ng dialog (pindutin ang avatar sa itaas o sa sidebar) | `app/page.tsx` → hanapin `setProfileOpen(true)` |
 | Picture sa User Management | `components/StaffManagement.tsx`, `app/api/admin/staff/route.ts` |
+
+---
+
+## 8. Stock Transfer popup sa Inventory — v9.35
+
+| Ano | Saan |
+|---|---|
+| Popup: New request + All requests (Approve, Reject na may dahilan, Release, Confirm Received) | `components/StockTransferDialog.tsx` |
+| Mga button na nagbubukas ng popup ("+ New Stock Request", "View All Requests →") | `components/OnlineInventoryWorkspace.tsx` → hanapin `setTransfer(` |
+| Itsura ng popup | `app/clean-ui.css` → hanapin `v9.35 — Stock Transfer popup` |
+| Lumang link `/stock-requests` (para gumana pa rin ang lumang bookmark) | `app/stock-requests/page.tsx` |
+| Patakaran sa database (sino ang puwedeng mag-approve/release/receive) | RPC `cms_submit_stock_request`, `cms_process_stock_request` |
 
 ---
 

@@ -442,3 +442,65 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .online-inventory .inventory-branch-metrics{gap:4px}
 .online-inventory .inventory-branch-metrics .branch-metric-out strong{color:#b42318}
 .online-inventory .inventory-branch-metrics .branch-metric-low strong{color:#b54708}
+
+/* v9.35 — Stock Transfer popup (components/StockTransferDialog.tsx). Prefixed with .xfer to beat `.online-inventory button`. */
+.online-inventory .inventory-request-actions button{display:inline-flex;align-items:center;padding:9px 13px;border:1px solid #e5c46c;border-radius:8px;background:#fff;color:#5e4c1a;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit}
+.online-inventory .inventory-request-actions button.inventory-request-new{background:#f4c542;border-color:#f4c542;color:#332807}
+.xfer-scrim{position:fixed;inset:0;z-index:1000;background:rgba(15,23,42,.45);display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px 16px;overflow:auto}
+.xfer{width:100%;max-width:640px;background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(15,23,42,.25);color:#253044;font-family:inherit;overflow:hidden}
+.xfer *{box-sizing:border-box}
+.xfer .xfer-head{display:flex;justify-content:space-between;gap:12px;padding:20px 22px 14px}
+.xfer .xfer-head h3{margin:0;font-size:18px;font-weight:750}
+.xfer .xfer-head p{margin:4px 0 0;font-size:12px;color:#7a8494;line-height:1.45}
+.xfer .xfer-close{flex:none;width:34px;height:34px;display:grid;place-items:center;border:0;border-radius:8px;background:#f2f4f7;color:#475467;cursor:pointer;padding:0}
+.xfer .xfer-close:hover{background:#e7eaee}
+.xfer .xfer-tabs{display:flex;gap:4px;padding:0 22px;border-bottom:1px solid #edf0f3}
+.xfer .xfer-tabs button{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:10px 12px;margin-bottom:-1px;border-bottom:2px solid transparent;color:#667085;font:inherit;font-size:13px;font-weight:650;cursor:pointer;border-radius:0}
+.xfer .xfer-tabs button.active{color:#1f2937;border-bottom-color:#d9a514}
+.xfer .xfer-tabs b{font-size:11px;background:#f2f4f7;border-radius:10px;padding:1px 7px;color:#475467}
+.xfer .xfer-alert,.xfer .xfer-ok{margin:14px 22px 0;padding:10px 12px;border-radius:9px;font-size:12px}
+.xfer .xfer-alert{background:#fef3f2;color:#b42318;border:1px solid #fecdca}
+.xfer .xfer-ok{background:#ecfdf3;color:#067647;border:1px solid #abefc6}
+.xfer .xfer-body{padding:18px 22px 20px;display:flex;flex-direction:column;gap:14px}
+.xfer .xfer-body-list{max-height:62vh;overflow:auto}
+.xfer .xfer-route{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:end}
+.xfer .xfer-arrow{color:#b8860b;margin-bottom:12px}
+.xfer .xfer-row{display:grid;grid-template-columns:130px minmax(0,1fr);gap:12px}
+.xfer .xfer-field{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:12px;font-weight:650;color:#465267}
+.xfer .xfer-field input,.xfer .xfer-field select{width:100%;height:42px;border:1px solid #dfe3e9;border-radius:9px;background:#fff;color:#273044;font:inherit;font-size:13px;font-weight:500;padding:0 11px;outline:none}
+.xfer .xfer-field input:focus,.xfer .xfer-field select:focus{border-color:#d2a51e;box-shadow:0 0 0 3px #fdf4d7}
+.xfer .xfer-field select:disabled{background:#f6f7f9;color:#667085}
+.xfer .xfer-hint{margin:-4px 0 0;font-size:12px}
+.xfer .xfer-hint-bad{color:#b42318}
+.xfer .xfer-foot{display:flex;justify-content:flex-end;gap:8px;padding-top:6px;border-top:1px solid #edf0f3;margin-top:4px;padding-top:16px}
+.xfer .xfer-btn{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:8px 14px;border:1px solid #dfe3e9;border-radius:9px;background:#fff;color:#344054;font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.xfer .xfer-btn:hover:not(:disabled){background:#f9fafb}
+.xfer .xfer-btn:disabled{opacity:.5;cursor:not-allowed}
+.xfer .xfer-btn.xfer-primary{background:#f4c542;border-color:#f4c542;color:#332807}
+.xfer .xfer-btn.xfer-primary:hover:not(:disabled){background:#eab92c}
+.xfer .xfer-btn.xfer-ok-btn{background:#ecfdf3;border-color:#abefc6;color:#067647}
+.xfer .xfer-btn.xfer-bad-btn{background:#fef3f2;border-color:#fecdca;color:#b42318}
+.xfer .xfer-filters{display:flex;flex-wrap:wrap;gap:6px}
+.xfer .xfer-chip{border:1px solid #e4e7ec;background:#fff;border-radius:20px;padding:5px 11px;font:inherit;font-size:12px;font-weight:600;color:#475467;cursor:pointer}
+.xfer .xfer-chip b{color:#98a2b3;margin-left:3px}
+.xfer .xfer-chip.active{background:#1f2937;border-color:#1f2937;color:#fff}
+.xfer .xfer-chip.active b{color:#d0d5dd}
+.xfer .xfer-list{list-style:none;margin:0;padding:0}
+.xfer .xfer-list li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;padding:13px 0;border-bottom:1px solid #edf0f3}
+.xfer .xfer-list li:last-child{border-bottom:0}
+.xfer .xfer-item-main{display:flex;flex-direction:column;gap:3px;min-width:0}
+.xfer .xfer-item-main strong{font-size:13px}
+.xfer .xfer-meta{font-size:12px;color:#7d8796}
+.xfer .xfer-meta b{color:#344054;font-weight:650}
+.xfer .xfer-status{justify-self:end;font-size:11px;font-weight:700;border-radius:20px;padding:4px 10px;white-space:nowrap}
+.xfer .xfer-status-pending{background:#fff6da;color:#8a6500}
+.xfer .xfer-status-approved{background:#eff8ff;color:#175cd3}
+.xfer .xfer-status-released{background:#f4f3ff;color:#5925dc}
+.xfer .xfer-status-received{background:#ecfdf3;color:#067647}
+.xfer .xfer-status-rejected{background:#fef3f2;color:#b42318}
+.xfer .xfer-actions{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
+.xfer .xfer-actions:empty{display:none}
+.xfer .xfer-reject{grid-column:1/-1;display:flex;gap:6px}
+.xfer .xfer-reject input{flex:1;min-width:0;height:36px;border:1px solid #fecdca;border-radius:9px;padding:0 10px;font:inherit;font-size:12px;outline:none}
+.xfer .xfer-empty{text-align:center;color:#8992a0;font-size:13px;padding:28px 10px}
+@media(max-width:560px){.xfer-scrim{padding:0;align-items:stretch}.xfer{border-radius:0;min-height:100%}.xfer .xfer-route{grid-template-columns:1fr}.xfer .xfer-arrow{transform:rotate(90deg);margin:0 auto}.xfer .xfer-row{grid-template-columns:1fr}}
