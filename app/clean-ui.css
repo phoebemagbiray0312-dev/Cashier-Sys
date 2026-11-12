@@ -519,3 +519,16 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .xfer .xfer-combo-list b.low{color:#b54708;background:#fffaeb}
 .xfer .xfer-combo-none{padding:10px;font-size:12px;color:#98a2b3;text-align:center}
 .xfer{overflow:visible}
+
+/* v9.36 — Compact "Stock Summary by Branch" cards */
+.online-inventory .inventory-branch-cards{gap:10px}
+.online-inventory .inventory-branch-cards .inventory-branch-card{min-height:0;height:auto;padding:12px 14px;gap:6px}
+.online-inventory .inventory-branch-card .inventory-branch-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.online-inventory .inventory-branch-cards .inventory-branch-name{min-height:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.online-inventory .inventory-branch-cards .inventory-branch-units{font-size:20px;line-height:1.15}
+.online-inventory .inventory-branch-cards .inventory-branch-units small{display:inline;font-size:11px}
+.online-inventory .inventory-branch-cards .inventory-branch-metrics{display:flex;flex-direction:row;flex-wrap:wrap;gap:4px;padding-top:6px;border-top:1px solid #f0e9d6}
+.online-inventory .inventory-branch-metrics .branch-metric{flex-direction:row;align-items:baseline;gap:4px;padding:3px 7px;margin:0;font-size:11px;background:#fff;border:1px solid #efe7d2;border-radius:20px;white-space:nowrap}
+.online-inventory .inventory-branch-metrics .branch-metric strong{display:inline;margin:0;font-size:12px}
+.online-inventory .inventory-branch-metrics .branch-metric:hover{background:#fbf3dc}
+.online-inventory .inventory-branch-card .inventory-branch-open{flex:none;margin:0;font-size:11px;white-space:nowrap}
