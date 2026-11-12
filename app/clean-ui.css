@@ -598,3 +598,9 @@ button.inventory-branch-open:hover{text-decoration:underline}
 @media(max-width:380px){
  .online-inventory .inventory-toolbar.inventory-main-toolbar>button{font-size:12px;padding:9px 4px}
 }
+/* v9.37.1 — top bar never wider than a phone screen */
+.topbar .top-left{min-width:0;flex:1 1 auto;overflow:hidden}
+.topbar .top-left *{min-width:0}
+.topbar .top-left h1,.topbar .top-left h2,.topbar .top-left strong,.topbar .top-left span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .top-right{flex:none;min-width:0}
+@media(max-width:420px){.topbar .branch-select select{max-width:116px;padding-left:9px;padding-right:24px;font-size:12px}.topbar{gap:6px}}
