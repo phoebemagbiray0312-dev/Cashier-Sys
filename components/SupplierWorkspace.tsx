@@ -40,8 +40,9 @@ export default function SupplierWorkspace({ embedded = false }: { embedded?: boo
   const [vehicle, setVehicle] = useState(''); const [part, setPart] = useState('');
 
   const authUid = userId.replace(/^supabase:/, '');
-  const canAdd = role === 'pb' || role === 'admin';
-  const canEdit = (s: OnlineSupplier) => role === 'admin' || (role === 'pb' && s.createdBy === authUid && s.status === 'For Review');
+  // v9.39: cashiers are front-line and keep supplier receipts, so they can add suppliers too (For Review)
+  const canAdd = role === 'cashier' || role === 'pb' || role === 'admin';
+  const canEdit = (s: OnlineSupplier) => role === 'admin' || (role !== 'admin' && s.createdBy === authUid && s.status === 'For Review');
 
   async function reload() {
     try {

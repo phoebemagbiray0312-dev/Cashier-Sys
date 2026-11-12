@@ -123,8 +123,8 @@ export function removeLegacySeedFixtures(db:Database):Database {
  );
  const pos=demoPOS&&!referencedPOS?db.pos.filter(p=>p.id!==demoPOS.id):db.pos;
  const patterns=[
-  {no:'UCM-Rotating Fund-00000001',branch:'UCM',amount:1250,payee:'Shop Supplies Co.',category:'Office Supplies',fund:'RF',createdBy:'u-cashier'},
-  {no:'UCQC-Rotating Fund-00000001',branch:'UCQC',amount:680,payee:'Office Mart',category:'Office Supplies',fund:'RF',createdBy:'u-admin'},
+  {no:'UCM-RF-00000001',branch:'UCM',amount:1250,payee:'Shop Supplies Co.',category:'Office Supplies',fund:'RF',createdBy:'u-cashier'},
+  {no:'UCQC-RF-00000001',branch:'UCQC',amount:680,payee:'Office Mart',category:'Office Supplies',fund:'RF',createdBy:'u-admin'},
   {no:'UCM-RFP-00000001',branch:'UCM',amount:3800,payee:'Auto Parts Supplier',category:'Automotive Parts',fund:'RFP',createdBy:'u-pb'}
  ];
  const matches=(e:FundEntry)=>patterns.some(p=>e.no===p.no&&e.branch===p.branch&&e.amount===p.amount&&e.payee===p.payee&&e.category===p.category&&e.fund===p.fund&&e.createdBy===p.createdBy)&&e.kind==='expense'&&e.voucher===''&&e.receiptNo===''&&e.tin===''&&e.notes==='Sample transaction for frontend testing'&&!e.linkedPosId&&!e.purchaseId&&!db.requests.some(r=>r.entryId===e.id)&&!db.incidents.some(i=>i.entryId===e.id);
@@ -200,7 +200,7 @@ export function branchFundTotals(db:Database,fund:Fund){
 }
 
 export function nextNumber(db:Database,branch:BranchId,type:'RF'|'RFP'|'POS'):string {
-  const prefix=type==='RF'?`${branch}-Rotating Fund-`:`${branch}-${type}-`;const all=type==='POS'?[...db.pos.map(v=>v.no),...(db.deletedPOSDrafts||[]).map(v=>v.no)]:db.fundEntries.filter(v=>v.fund===type).map(v=>v.no);
+  const prefix=`${branch}-${type}-`; // v9.39: RF numbers are short, e.g. UCM-RF-00000001const all=type==='POS'?[...db.pos.map(v=>v.no),...(db.deletedPOSDrafts||[]).map(v=>v.no)]:db.fundEntries.filter(v=>v.fund===type).map(v=>v.no);
   const max=Math.max(0,...all.filter(v=>v.startsWith(prefix)).map(v=>Number(v.slice(prefix.length))||0));
   return `${prefix}${String(max+1).padStart(8,'0')}`;
 }

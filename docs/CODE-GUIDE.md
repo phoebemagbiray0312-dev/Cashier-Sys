@@ -127,6 +127,8 @@ Kasama: RF/RFP fund entries, disbursement requests, cash counts, turnovers, inci
 | Itsura sa phone: Inventory (cards imbes na table), Supplier list, top bar | `app/clean-ui.css` → hanapin `v9.37` |
 | Spreadsheets & Documents nasa loob na ng system (hindi na lumilipat ng page) | `app/page.tsx` → hanapin `openStudio` at `studio-embedded`; `components/ReportStudio.tsx` → prop `onNavigate` |
 | Stock Transfer: nakikita ng Cashier/PB ang stock ng ibang branch (pangalan, SKU, dami lang) | `supabase/migrations/20261112_transfer_catalog.sql` → `cms_transfer_catalog`; ginagamit sa `components/StockTransferDialog.tsx` |
+| Cashier puwede nang magdagdag/mag-edit ng supplier at catalog item (For Review hanggang i-approve ng Admin) | `supabase/migrations/20261112_cashier_suppliers.sql`; `components/SupplierWorkspace.tsx` → `canAdd`, `canEdit` |
+| Mas maikling RF number (hal. `UCM-RF-00000001`) | `lib/data.ts` → hanapin `RF numbers are short` |
 
 ---
 
