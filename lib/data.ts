@@ -200,7 +200,7 @@ export function branchFundTotals(db:Database,fund:Fund){
 }
 
 export function nextNumber(db:Database,branch:BranchId,type:'RF'|'RFP'|'POS'):string {
-  const prefix=`${branch}-${type}-`; // v9.39: RF numbers are short, e.g. UCM-RF-00000001const all=type==='POS'?[...db.pos.map(v=>v.no),...(db.deletedPOSDrafts||[]).map(v=>v.no)]:db.fundEntries.filter(v=>v.fund===type).map(v=>v.no);
+  const prefix=`${branch}-${type}-`;/* v9.39: RF numbers are short, e.g. UCM-RF-00000001 */const all=type==='POS'?[...db.pos.map(v=>v.no),...(db.deletedPOSDrafts||[]).map(v=>v.no)]:db.fundEntries.filter(v=>v.fund===type).map(v=>v.no);
   const max=Math.max(0,...all.filter(v=>v.startsWith(prefix)).map(v=>Number(v.slice(prefix.length))||0));
   return `${prefix}${String(max+1).padStart(8,'0')}`;
 }
