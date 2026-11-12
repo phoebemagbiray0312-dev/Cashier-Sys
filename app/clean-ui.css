@@ -771,3 +771,14 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .stat-card .stat-heading span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat-card .stat-amount{font-variant-numeric:tabular-nums}
 @media(max-width:560px){.rfp-actions{display:grid;grid-template-columns:1fr 1fr}.rfp-actions .button-primary{grid-column:1/-1}}
+/* v9.48 — Record Parts form: tidy header grid, supplier only on Part 1 (applies to the whole PO) */
+@media(min-width:761px){
+ .compact-purchase-header{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:12px 14px!important}
+ .compact-purchase-header>:nth-child(1){grid-column:span 3}
+ .compact-purchase-header>:nth-child(2){grid-column:span 3}
+ .compact-purchase-header>:nth-child(3){grid-column:span 2}
+ .compact-purchase-header>:nth-child(4){grid-column:span 3}
+ .compact-purchase-header>:nth-child(5){grid-column:span 1}
+}
+.purchase-line+.purchase-line .purchase-line-fields>div:nth-child(2){display:none}
+@media(min-width:761px){.purchase-line+.purchase-line .purchase-line-fields{grid-template-columns:minmax(0,2fr) minmax(0,.8fr) minmax(0,1fr)!important}}
