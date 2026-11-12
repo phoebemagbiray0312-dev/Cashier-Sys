@@ -376,3 +376,21 @@
 .sup-btn-icon{width:32px;padding:0;justify-content:center}
 .sup-table td:first-child{min-width:170px}
 .sup-table td,.sup-table th{padding-left:12px;padding-right:12px}
+
+/* v9.33 — Inventory stock colours */
+.stock-legend{display:inline-flex;gap:6px;flex-wrap:wrap}
+.stock-chip{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:#fff;font:inherit;font-size:12.5px;font-weight:650;color:#3a3f47;cursor:pointer}
+.stock-chip i{width:9px;height:9px;border-radius:999px;background:#c5c9d0}
+.stock-chip b{font-weight:750;color:#1d2023}
+.stock-chip-ok i{background:#12b76a}.stock-chip-low i{background:#f79009}.stock-chip-zero i{background:#f04438}
+.stock-chip.active{border-color:#1d2023;box-shadow:inset 0 0 0 1px #1d2023}
+.stock-chip-zero.active{border-color:#f04438;box-shadow:inset 0 0 0 1px #f04438;background:#fef3f2}
+.stock-chip-low.active{border-color:#f79009;box-shadow:inset 0 0 0 1px #f79009;background:#fffaeb}
+.stock-chip-ok.active{border-color:#12b76a;box-shadow:inset 0 0 0 1px #12b76a;background:#ecfdf3}
+.stock-badge{display:inline-flex;align-items:baseline;gap:6px;padding:4px 10px;border-radius:999px;font-weight:750;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stock-badge small{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.stock-badge.stock-ok{background:#ecfdf3;color:#067647}
+.stock-badge.stock-low{background:#fffaeb;color:#b54708}
+.stock-badge.stock-out{background:#fef3f2;color:#b42318}
+.inventory-table-wrap tr.stock-row-out td:first-child{box-shadow:inset 3px 0 0 #f04438}
+.inventory-table-wrap tr.stock-row-low td:first-child{box-shadow:inset 3px 0 0 #f79009}
