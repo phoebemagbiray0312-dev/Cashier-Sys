@@ -87,7 +87,8 @@ export default function PurchaseOrders({ purchases, pos, role, branch, userName,
     if (k === 'week') { const d = new Date(now); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); setFrom(ph(d)); setTo(today); return; }
     setFrom(today.slice(0, 8) + '01'); setTo(today);
   };
-  const activePreset = !from && !to ? 'all' : from === today && to === today ? 'today' : to === today && from === today.slice(0, 8) + '01' ? 'month' : '';
+  const weekStart = (() => { const d = new Date(today + 'T00:00:00'); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return ph(d); })();
+  const activePreset = !from && !to ? 'all' : from === today && to === today ? 'today' : from === weekStart && to === today ? 'week' : to === today && from === today.slice(0, 8) + '01' ? 'month' : '';
   const q = query.trim().toLowerCase();
   const shown = dated.filter(o => (filter === 'all' || o.stage === filter) && (!q || [o.no, o.plate, o.car, o.supplier, ...o.lines.map(l => l.description)].join(' ').toLowerCase().includes(q)));
   const po = orders.find(o => o.no === openNo);
