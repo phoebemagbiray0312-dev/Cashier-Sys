@@ -1,4 +1,4 @@
-# Code Guide — Saan makikita ang code (v9.26 – v9.35)
+# Code Guide — Saan makikita ang code (v9.26 – v9.37)
 
 Gabay ito sa mga binago noong **Nov 9–11, 2026** para makita mo kung saan nakalagay ang bawat bahagi ng system.
 Puwede mong buksan ang bawat file sa GitHub: `https://github.com/phoebemagbiray0312-dev/Cashier-Sys/blob/main/<path>`
@@ -115,6 +115,17 @@ Kasama: RF/RFP fund entries, disbursement requests, cash counts, turnovers, inci
 | Itsura ng popup | `app/clean-ui.css` → hanapin `v9.35 — Stock Transfer popup` |
 | Lumang link `/stock-requests` (para gumana pa rin ang lumang bookmark) | `app/stock-requests/page.tsx` |
 | Patakaran sa database (sino ang puwedeng mag-approve/release/receive) | RPC `cms_submit_stock_request`, `cms_process_stock_request` |
+
+---
+
+## 9. Inventory cards, phone layout, Spreadsheets/Documents sa loob — v9.36 – v9.37
+
+| Ano | Saan |
+|---|---|
+| "View products ↓" sa branch card (pipiliin ang branch at bababa sa Product Inventory) | `components/OnlineInventoryWorkspace.tsx` → `viewBranchProducts` |
+| Mas maliit na branch cards | `app/clean-ui.css` → hanapin `v9.36 — Compact` |
+| Itsura sa phone: Inventory (cards imbes na table), Supplier list, top bar | `app/clean-ui.css` → hanapin `v9.37` |
+| Spreadsheets & Documents nasa loob na ng system (hindi na lumilipat ng page) | `app/page.tsx` → hanapin `openStudio` at `studio-embedded`; `components/ReportStudio.tsx` → prop `onNavigate` |
 
 ---
 
