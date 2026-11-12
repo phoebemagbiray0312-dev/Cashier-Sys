@@ -24,7 +24,7 @@ export default function OnlineInventoryWorkspace({embeddedMode=false,pageBranch}
  const [branchSummaryLoading,setBranchSummaryLoading]=useState(false);
  const [branchSummaryError,setBranchSummaryError]=useState(false);
  // v9.36: "View products" on a branch card picks that branch and scrolls to the product table
- function viewBranchProducts(b:string){void changeBranch(b);window.setTimeout(()=>document.getElementById('inventory-products')?.scrollIntoView({behavior:'smooth',block:'start'}),60);}
+ function viewBranchProducts(b:string){void changeBranch(b);const go=()=>document.getElementById('inventory-products')?.scrollIntoView({behavior:'smooth',block:'start'});window.setTimeout(go,60);window.setTimeout(go,900);}
  const [transfer,setTransfer]=useState<null|'new'|'history'>(null);
  // v9.34: popup list from the Stock Summary cards (Products / Out of stock / Low stock).
  const [stockPopup,setStockPopup]=useState<null|{branch:string;kind:'all'|'out'|'low';rows:OnlineProduct[];loading:boolean;error:string;search:string}>(null);

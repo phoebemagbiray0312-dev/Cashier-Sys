@@ -532,3 +532,4 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .online-inventory .inventory-branch-metrics .branch-metric strong{display:inline;margin:0;font-size:12px}
 .online-inventory .inventory-branch-metrics .branch-metric:hover{background:#fbf3dc}
 .online-inventory .inventory-branch-card .inventory-branch-open{flex:none;margin:0;font-size:11px;white-space:nowrap}
+.online-inventory #inventory-products{scroll-margin-top:12px}
