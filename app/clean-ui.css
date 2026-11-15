@@ -798,3 +798,10 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .profile-password{display:flex;flex-direction:column;gap:10px;border-top:1px solid #eceef2;padding-top:12px;margin-top:4px}
 .profile-show{display:flex;gap:8px;align-items:center;font-size:12px;color:#475467}
 .profile-pw-actions{display:flex;justify-content:flex-end;gap:8px}
+/* v9.53 — one clear main action per page, status is text not a button */
+.heading-extra{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.heading-actions{display:flex;gap:8px;flex-wrap:wrap}
+.cashcount-done,.cashcount-wait{display:flex;align-items:center;justify-content:center;gap:6px;min-height:40px;border-radius:10px;font-size:13px;font-weight:600}
+.cashcount-done{background:#ecfdf3;color:#067647}
+.cashcount-wait{background:#f2f4f7;color:#475467}
+@media (max-width:760px){.heading-extra{justify-content:flex-start;width:100%}.heading-actions{width:100%}.heading-actions .button{flex:1}}
