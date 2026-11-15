@@ -6,7 +6,7 @@
  *       (3) Done when the receipt amount matches the PO; a mismatch is marked "Doesn't match".
  * Receipts are saved online in the `rfpReceipts` collection (same records as before).
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Camera, CheckCircle2, ChevronRight, CircleAlert, Clock3, FileImage, Search, Upload, X } from 'lucide-react';
 import type { BranchId, FundEntry, POS, RFPReceiptRecord } from '@/lib/data';
 import { BRANCH_NAME, expenseGross, normalizePlate, pesos } from '@/lib/data';
@@ -47,6 +47,8 @@ export default function PurchaseOrders({ purchases, pos, role, branch, userName,
   const [to, setTo] = useState('');
   const [preview, setPreview] = useState<Doc | null>(null);
   const [msg, setMsg] = useState('');
+  // v9.49: a save is only confirmed when the record is still there after the server answers
+  const [pending, setPending] = useState<{ id: string; ok: string; at: number } | null>(null);
   // receipt form
   const [file, setFile] = useState<Doc | null>(null);
   const [amount, setAmount] = useState('');
@@ -58,6 +60,13 @@ export default function PurchaseOrders({ purchases, pos, role, branch, userName,
   const [refundRef, setRefundRef] = useState('');
 
   const superseded = (r: RFPReceiptRecord) => records.some(x => x.replacesId === r.id);
+  useEffect(() => {
+    if (!pending) return;
+    const present = records.some(r => r.id === pending.id);
+    if (!present && Date.now() - pending.at > 300) { setMsg('Not saved. The server did not accept this receipt — please try again.'); setPending(null); return; }
+    const t = window.setTimeout(() => { if (records.some(r => r.id === pending.id)) setMsg(pending.ok); setPending(null); }, 2500);
+    return () => window.clearTimeout(t);
+  }, [records, pending]);
 
   const orders = useMemo<PO[]>(() => {
     const lines = purchases.filter(p => p.fund === 'RFP' && p.kind === 'expense' && p.status !== 'Rejected' && (branch === 'ALL' || p.branch === branch));
@@ -109,7 +118,7 @@ export default function PurchaseOrders({ purchases, pos, role, branch, userName,
       ...(matches ? {} : { reason: `Receipt ${pesos(n)} vs PO ${pesos(po.total)}` }),
       ...(replacing && po.receipt ? { replacesId: po.receipt.id } : {}),
     };
-    if (onSave([entry, ...records])) { setMsg(matches ? 'Receipt saved. This PO is complete.' : `Saved, but the receipt (${pesos(n)}) doesn't match the PO (${pesos(po.total)}). Admin will see this.`); setFile(null); setReplacing(false); }
+    if (onSave([entry, ...records])) { setMsg('Saving receipt…'); setPending({ id: entry.id, at: Date.now(), ok: matches ? 'Receipt saved. This PO is complete.' : `Saved, but the receipt (${pesos(n)}) doesn't match the PO (${pesos(po.total)}). Admin will see this.` }); setFile(null); setReplacing(false); }
     else setMsg('Could not save. Please try again.');
   }
 
