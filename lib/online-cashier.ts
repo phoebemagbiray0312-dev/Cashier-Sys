@@ -31,7 +31,7 @@ export interface OnlineSaleLine {
 export async function listOnlineProducts(branchId?: string): Promise<OnlineProduct[]> {
   if (!await getCurrentStaff()) throw new Error('Staff authentication required.');
   let query = getSupabaseClient().from('cms_products')
-    .select('id,branch_id,sku,name,unit_price,stock_qty').order('name').limit(200);
+    .select('id,branch_id,sku,name,unit_price,stock_qty').order('name').limit(2000);
   if (branchId) query = query.eq('branch_id',branchId);
   const {data,error} = await query;
   if (error) throw new Error('Unable to load online products.');

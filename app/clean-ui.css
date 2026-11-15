@@ -805,3 +805,26 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .cashcount-done{background:#ecfdf3;color:#067647}
 .cashcount-wait{background:#f2f4f7;color:#475467}
 @media (max-width:760px){.heading-extra{justify-content:flex-start;width:100%}.heading-actions{width:100%}.heading-actions .button{flex:1}}
+/* v9.56 — use parts from branch inventory inside Unit costs */
+.uc-actions{display:flex;gap:8px;flex-wrap:wrap}
+.uc-stock{border:1px solid #f1d27a;background:#fffbeb;border-radius:12px;padding:12px;margin:10px 0;display:flex;flex-direction:column;gap:10px}
+.uc-stock-head{display:flex;justify-content:space-between;align-items:center}
+.uc-stock-head button{border:0;background:none;cursor:pointer;color:#475467}
+.uc-stock input{width:100%;min-height:38px;border:1px solid #d0d5dd;border-radius:8px;padding:0 10px;font:inherit;background:#fff}
+.uc-pick{list-style:none;margin:0;padding:0;max-height:260px;overflow:auto;border:1px solid #eaecf0;border-radius:8px;background:#fff}
+.uc-pick li+li{border-top:1px solid #f2f4f7}
+.uc-pick button{width:100%;display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 10px;border:0;background:none;text-align:left;cursor:pointer;font:inherit}
+.uc-pick button:hover:not(:disabled){background:#f9fafb}
+.uc-pick button:disabled{opacity:.55;cursor:not-allowed}
+.uc-pick span,.uc-picked span{display:flex;flex-direction:column;min-width:0}
+.uc-pick small,.uc-picked small{color:#667085;font-size:12px}
+.uc-pick em{font-style:normal;font-size:12px;color:#067647;white-space:nowrap}
+.uc-pick em.out{color:#b42318}
+.uc-picked{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff;border:1px solid #eaecf0;border-radius:8px;padding:9px 10px}
+.uc-picked button{border:1px solid #d0d5dd;background:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;font:inherit;font-size:12px}
+.uc-stock-form{display:flex;flex-direction:column;gap:10px}
+.uc-stock-form label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:#344054}
+.uc-stock-actions{display:flex;justify-content:flex-end;gap:8px}
+.uc-muted{color:#667085;font-size:12px;padding:8px 10px;margin:0}
+.uc-err{color:#b42318;font-size:12px;margin:0}
+.uc-docs button{display:inline-flex;align-items:center;gap:4px}

@@ -1,3 +1,4 @@
+import {posStockUseCost,type POSStockUse} from './online-inventory';
 import type {DisbursementRequest} from './disbursement-requests';
 export type Role = 'admin'|'cashier'|'pb';
 export type Status = 'Pending'|'Approved'|'Rejected'|'Report Required'|'Report Submitted';
@@ -73,7 +74,7 @@ export interface Turnover {id:string;branch:BranchId;date:string;amount:number;n
 export interface ChangeRequest {id:string;type:'Edit RFP'|'Change Branch';entryId:string;branch:BranchId;requestedBy:string;changes:Partial<FundEntry>;original?:Partial<FundEntry>;reason:string;status:'Pending'|'Approved'|'Rejected';createdAt:string;decidedBy?:string;}
 export interface Audit {id:string;at:string;by:string;action:string;detail:string;}
 export interface Database {
-  users:User[];fundEntries:FundEntry[];rfpReceipts?:RFPReceiptRecord[];disbursementRequests?:DisbursementRequest[];pos:POS[];deletedPOSDrafts?:DeletedPOSDraft[];inventory:InventoryProduct[];stockMovements:StockMovement[];stockRequests:StockCorrection[];stockReceipts:StockReceipt[];stockIssues?:StockIssueRequest[];terminalEvents?:TerminalEvent[];terminalSettlements?:TerminalSettlement[];counts:Count[];incidents:Incident[];turnovers:Turnover[];requests:ChangeRequest[];audit:Audit[];
+  users:User[];fundEntries:FundEntry[];rfpReceipts?:RFPReceiptRecord[];posStockUses?:POSStockUse[];disbursementRequests?:DisbursementRequest[];pos:POS[];deletedPOSDrafts?:DeletedPOSDraft[];inventory:InventoryProduct[];stockMovements:StockMovement[];stockRequests:StockCorrection[];stockReceipts:StockReceipt[];stockIssues?:StockIssueRequest[];terminalEvents?:TerminalEvent[];terminalSettlements?:TerminalSettlement[];counts:Count[];incidents:Incident[];turnovers:Turnover[];requests:ChangeRequest[];audit:Audit[];
   settings:{rfBase:Record<BranchId,number>;rfpBase:Record<BranchId,number>;categories:string[];signatories?:{checked:string;approved:string};reportLogo?:Receipt};
 }
 export const uid = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ID-${Date.now()}-${Math.random().toString(36).slice(2,7)}`);
@@ -560,6 +561,8 @@ export function posCostBreakdown(p:POS,db?:Database){
   absorb(product.name,net);
   lines.push({id:out.id,description:`${product.name} · ${net} ${product.unit}`,source:`From Inventory · ${out.id.slice(0,8)}`,amount:Math.round(net*out.unitCost*100)/100});
  }
+ // v9.56: parts the cashier took from the live branch inventory for this unit
+ for(const u of (db.posStockUses||[]).filter(u=>u.posId===p.id)){const c=posStockUseCost(u);if(c&&c>0){absorb(u.name,u.qty-u.returned);lines.push({id:u.id,description:`${u.name} · ${u.qty-u.returned} pc(s)`,source:'From Inventory · branch stock',amount:c});}}
  // v9.49: the cashier's other expenses for this unit (RF, linked from the expense form)
  for(const e of db.fundEntries.filter(e=>e.fund==='RF'&&e.kind==='expense'&&e.status!=='Rejected'&&e.linkedPosId===p.id))lines.push({id:e.id,description:`${e.category} · ${e.payee}`,source:`Unit expense (RF) · ${e.no}`,amount:expenseGross(e)});
  return lines.filter(r=>r.amount>0);

@@ -55,3 +55,46 @@ export async function listStockMovements(branchId?: string, startDate?: string, 
   if (error) throw new Error('Could not load stock history.');
   return (data ?? []) as StockMovement[];
 }
+
+/** v9.56: parts the cashier took from the live branch inventory for a POS (unit). */
+export interface POSStockUse {
+  id: string; posId: string; productId: string; sku: string; name: string;
+  qty: number; returned: number; unitCost: number | null; currentPrice: number;
+  at: string; reason: string;
+}
+export async function listPOSStockUses(branchId?: string): Promise<POSStockUse[]> {
+  if (!await getCurrentStaff()) return [];
+  let q = getSupabaseClient().from('cms_stock_movements')
+    .select('id,product_id,branch_id,movement_type,quantity_delta,reason,created_at,sale_pos_id,unit_cost,transfer_group,cms_products(sku,name,unit_price)')
+    .not('sale_pos_id', 'is', null).order('created_at', { ascending: true }).limit(5000);
+  if (branchId) q = q.eq('branch_id', branchId);
+  const { data, error } = await q;
+  if (error) throw new Error('Could not load parts used from inventory.');
+  type Row = { id: string; product_id: string; movement_type: string; quantity_delta: number; reason: string; created_at: string; sale_pos_id: string; unit_cost: number | null; transfer_group: string | null; cms_products: { sku: string; name: string; unit_price: number } | { sku: string; name: string; unit_price: number }[] | null };
+  const rows = (data ?? []) as unknown as Row[];
+  const prod = (r: Row) => Array.isArray(r.cms_products) ? r.cms_products[0] : r.cms_products;
+  const uses = rows.filter(r => r.movement_type === 'issue').map(r => ({
+    id: r.id, posId: r.sale_pos_id, productId: r.product_id, sku: prod(r)?.sku || '', name: prod(r)?.name || 'Product',
+    qty: -Number(r.quantity_delta), returned: 0, unitCost: r.unit_cost === null ? null : Number(r.unit_cost),
+    currentPrice: Number(prod(r)?.unit_price || 0), at: r.created_at, reason: r.reason,
+  }));
+  for (const r of rows.filter(r => r.movement_type === 'receive' && r.transfer_group)) {
+    const u = uses.find(x => x.id === r.transfer_group); if (u) u.returned += Number(r.quantity_delta);
+  }
+  return uses;
+}
+export function posStockUseCost(u: POSStockUse): number | null {
+  const price = u.unitCost ?? (u.currentPrice > 0 ? u.currentPrice : null);
+  return price === null ? null : Math.round((u.qty - u.returned) * price * 100) / 100;
+}
+export async function takeStockForPOS(productId: string, quantity: number, posId: string, note?: string) {
+  if (!Number.isFinite(quantity) || quantity <= 0) throw new Error('Enter how many were used.');
+  const { data, error } = await getSupabaseClient().rpc('cms_use_stock_for_pos', { p_product_id: productId, p_quantity: quantity, p_pos_id: posId, p_note: note?.trim() || null });
+  if (error) throw new Error(/closed/i.test(error.message) ? 'This POS is closed. Use a linked transaction.' : /Insufficient/i.test(error.message) ? 'Not enough stock for that quantity.' : /not found/i.test(error.message) ? 'Save the POS first, then try again.' : 'Could not take the item from inventory.');
+  return data as Record<string, unknown>;
+}
+export async function returnStockFromPOS(movementId: string, quantity: number) {
+  const { data, error } = await getSupabaseClient().rpc('cms_return_stock_from_pos', { p_movement_id: movementId, p_quantity: quantity });
+  if (error) throw new Error(/closed/i.test(error.message) ? 'This POS is closed. Ask Admin to correct it.' : /more than/i.test(error.message) ? 'You can only return what was used.' : 'Could not return the item to inventory.');
+  return data as Record<string, unknown>;
+}
