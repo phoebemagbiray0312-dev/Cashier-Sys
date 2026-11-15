@@ -36,7 +36,8 @@ import {rfpPoolBase,branchFundTotals,balance,BRANCHES,BRANCH_NAME,expenseGross,c
 import ReportStudio from '@/components/ReportStudio';
 import UnitAudit from '@/components/UnitAudit';
 import RFPDisbursementSheet from '@/components/RFPDisbursementSheet';
-import {studioSources} from '@/lib/report-studio';
+import {studioSources,type OnlineInventory} from '@/lib/report-studio';
+import {getSupabaseClient} from '@/lib/supabase-client';
 import {parseStudioFiles,safeStudioReturnPath,STUDIO_KEY,studioHomeHref,studioFileHref,newGrid,sourceToHtmlTable,type StudioFile} from '@/lib/report-studio';
 import {clearCashierStorage} from '@/lib/local-storage-reset';
 import {partsPurchaseHeaderIssue} from '@/lib/parts-purchase';
@@ -100,6 +101,8 @@ export default function Home(){
  const [username,setUsername]=useState('');const [password,setPassword]=useState('');const [showPass,setShowPass]=useState(false);
  const [setupName,setSetupName]=useState('');const [setupUsername,setSetupUsername]=useState('');const [setupPassword,setSetupPassword]=useState('');const [setupConfirm,setSetupConfirm]=useState('');const [setupBranch,setSetupBranch]=useState<BranchId>('UCM');
  const [selectedReportFund,setSelectedReportFund]=useState('');const [selectedReportPOS,setSelectedReportPOS]=useState('');const [reportPage,setReportPage]=useState(1);const [search,setSearch]=useState('');const [statusFilter,setStatusFilter]=useState('All');const [posTab,setPosTab]=useState<'transactions'|'drafts'|'sales'>('transactions');const [serviceFilter,setServiceFilter]=useState('All Services');const [posFrom,setPosFrom]=useState('');const [posTo,setPosTo]=useState('');
+ // v9.51: when a report row is picked, bring its detail panel (shown above the table) into view
+ useEffect(()=>{if(!selectedReportFund&&!selectedReportPOS)return;const t=window.setTimeout(()=>document.querySelector('.report-selected-detail')?.scrollIntoView({behavior:'smooth',block:'start'}),80);return()=>window.clearTimeout(t);},[selectedReportFund,selectedReportPOS]);
  const [printChoice,setPrintChoice]=useState('disbursement');const [financialTab,setFinancialTab]=useState<'RF'|'RFP'|'POS'|'Counts'>('RF');const [reportTab,setReportTab]=useState<'funds'|'pos'|'parts'|'cash'|'audit'>('funds');
  const [plateConfirmed,setPlateConfirmed]=useState('');const [partPlateConfirmed,setPartPlateConfirmed]=useState('');const [confirmedSuppliers,setConfirmedSuppliers]=useState<Record<string,string>>({});
  const [masterSuppliers,setMasterSuppliers]=useState<{name:string;status:string}[]>([]);
@@ -236,7 +239,10 @@ export default function Home(){
  useEffect(()=>{if(onlineIdentity)void refreshRemoteRecords();else{recSyncer.current?.stop();setRecReady(false);}},[onlineIdentity?.id]);
  function resetList(){setSearch('');setStockSearch('');setStatusFilter('All');setExpenseCategoryFilter('All')}
  // v9.37: Spreadsheets & Documents open inside the app (sidebar stays)
- const [studioFile,setStudioFile]=useState<string|null>(null);const [studioFrom,setStudioFrom]=useState(''),[studioTo,setStudioTo]=useState('');
+ const [studioFile,setStudioFile]=useState<string|null>(null);
+ // v9.51: live inventory for spreadsheet/document imports (cms_products, cms_stock_movements)
+ const [studioInv,setStudioInv]=useState<OnlineInventory|null>(null);
+ useEffect(()=>{if(view!=='spreadsheets'&&view!=='documents')return;let off=false;const sb=getSupabaseClient();void Promise.all([sb.from('cms_products').select('id,sku,name,branch_id,stock_qty,unit_price').order('name').range(0,4999),sb.from('cms_stock_movements').select('product_id,branch_id,movement_type,quantity_delta,reason,created_at').order('created_at',{ascending:false}).range(0,4999)]).then(([p,m])=>{if(!off&&!p.error&&!m.error)setStudioInv({products:(p.data||[]) as OnlineInventory['products'],movements:(m.data||[]) as OnlineInventory['movements']});});return()=>{off=true};},[view]);const [studioFrom,setStudioFrom]=useState(''),[studioTo,setStudioTo]=useState('');
  function openStudio(kind:'sheet'|'document',fileId:string|null){setStudioFile(fileId);setView(kind==='sheet'?'spreadsheets':'documents');setMenuOpen(false);window.scrollTo({top:0});}
  // v9.48: one PO = one supplier — new part lines copy the supplier chosen on Part 1
  useEffect(()=>{if(purchaseLines.length<2)return;const first=purchaseLines[0];if(purchaseLines.some(l=>l.supplier!==first.supplier)){setPurchaseLines(old=>old.map(l=>({...l,supplier:old[0].supplier})));setConfirmedSuppliers(old=>Object.fromEntries(purchaseLines.map(l=>[l.id,old[first.id]||''])));}},[purchaseLines]);
@@ -754,7 +760,7 @@ export default function Home(){
   <main className="main-content"><div className="page-heading"><div><span className="eyebrow">{user.role==='admin'?'ALL-BRANCH OVERSIGHT':user.role==='pb'&&!onlineIdentity?.branch?'PARTS BUYER · ALL BRANCHES':BRANCH_NAME(user.branch).toUpperCase()}</span><h1>{view==='suppliers'?'Supplier Management':titleMap[view]}</h1><p>{view==='dashboard'?`Good day, ${(displayName.replace(/^[A-Za-z]{2,5}\s*[-–·:]\s*/,'')||displayName).split(' ')[0]}. Here’s your workspace overview.`:view==='suppliers'?'Supplier masterlist and Admin approvals. Supplier purchases stay in Parts Fund (RFP).':subtitles[view]}</p></div><div className="heading-extra"><span className="today-chip"><CalendarClock size={15}/>{datePH(today)}</span></div></div>
    {view==='suppliers'&&<SupplierWorkspace embedded/>}
    {showRfpSheet&&<RFPDisbursementSheet db={db} preparedBy={user.name} preparedById={user.id} onClose={()=>setShowRfpSheet(false)}/>}
-   {(view==='spreadsheets'||view==='documents')&&<div className="studio-embedded"><ReportStudio key={view+':'+(studioFile||'library')} mode={view==='spreadsheets'?'sheet':'document'} fileId={studioFile||undefined} userId={user.id} userName={user.name} role={user.role} branch={user.role==='admin'?(selectedBranch==='ALL'?'All Branches':BRANCH_NAME(selectedBranch as BranchId)):BRANCH_NAME(user.branch)} sources={studioSources(db,user.role,user.branch,selectedBranch as BranchId|'ALL',studioFrom,studioTo)} fromDate={studioFrom} toDate={studioTo} setFromDate={setStudioFrom} setToDate={setStudioTo} onNavigate={id=>{setStudioFile(id);window.scrollTo({top:0});}}/></div>}
+   {(view==='spreadsheets'||view==='documents')&&<div className="studio-embedded"><ReportStudio key={view+':'+(studioFile||'library')} mode={view==='spreadsheets'?'sheet':'document'} fileId={studioFile||undefined} userId={user.id} userName={user.name} role={user.role} branch={user.role==='admin'?(selectedBranch==='ALL'?'All Branches':BRANCH_NAME(selectedBranch as BranchId)):BRANCH_NAME(user.branch)} sources={studioSources(db,user.role,user.branch,selectedBranch as BranchId|'ALL',studioFrom,studioTo,studioInv||undefined)} fromDate={studioFrom} toDate={studioTo} setFromDate={setStudioFrom} setToDate={setStudioTo} onNavigate={id=>{setStudioFile(id);window.scrollTo({top:0});}}/></div>}
    {user.role==='cashier'&&(locked||bodGate||hourPH()>=16&&!todayCounts.some(c=>c.kind==='EOD'))&&<div className={`cms-today-strip ${locked||bodGate?'urgent':''}`} role={locked||bodGate?'alert':'status'}>
     <div className="cms-today-label"><Clock size={17}/><strong>Today</strong></div>
     {locked?<><div className="cms-today-copy"><strong>Transaction entry restricted</strong><span>{required.length} mandatory explanation{required.length!==1?'s':''} required before transactions can continue.</span></div><button className="button button-dark" onClick={()=>{setReportId(required[0].id);setReportText('');setDialog('report')}}>Submit Report <ArrowRight size={15}/></button></>:

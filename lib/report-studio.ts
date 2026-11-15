@@ -178,7 +178,9 @@ export function parseStudioFiles(raw:string|null):StudioFile[] {
 
 import {BRANCH_NAME,posClosedDate,posTotal,paidTotal,posCOGS,stockAvailable,normalizePlate} from './data';
 import type {Database,BranchId,Role} from './data';
-export function studioSources(db:Database,role:Role,userBranch:BranchId,selectedBranch:BranchId|'ALL',fromDate='',toDate=''):StudioSource[]{
+/** v9.51: live inventory from Supabase (cms_products / cms_stock_movements); when given it replaces the old browser copy. */
+export type OnlineInventory={products:{id:string;sku:string;name:string;branch_id:string;stock_qty:number;unit_price:number}[];movements:{product_id:string;branch_id:string;movement_type:string;quantity_delta:number;reason:string;created_at:string}[]};
+export function studioSources(db:Database,role:Role,userBranch:BranchId,selectedBranch:BranchId|'ALL',fromDate='',toDate='',online?:OnlineInventory):StudioSource[]{
  const scope=(branch:BranchId)=>branch===userBranch&&role!=='admin'||role==='admin'&&(selectedBranch==='ALL'||branch===selectedBranch);
  const period=(date:string)=>(!fromDate||date>=fromDate)&&(!toDate||date<=toDate);
  const sources:StudioSource[]=[];
@@ -188,8 +190,14 @@ export function studioSources(db:Database,role:Role,userBranch:BranchId,selected
   sources.push({id:'terminal',label:'Terminal Transaction Ledger',headers:['Date','Branch','Method','Type','Provider','Device ID','Receipt Reference','Amount','POS Number','Matching','Cashier','Notes'],rows:(db.terminalEvents||[]).filter(e=>scope(e.branch)&&period(e.date)).map(e=>[e.date,BRANCH_NAME(e.branch),e.mode,e.kind,e.provider,e.terminalId,e.reference,e.amount,db.pos.find(p=>p.id===e.posId)?.no||'',e.paymentId?'POS Linked':e.kind==='Payment'?'Unmatched':'Terminal Only',db.users.find(u=>u.id===e.createdBy)?.name||e.createdBy,e.notes])});
   sources.push({id:'terminal-settlements',label:'Terminal Settlement Reconciliation',headers:['Date','Branch','Provider','Device ID','Batch Reference','Expected Net','Reported Net','Variance','Unmatched','Exceptions','Status','Admin Notes'],rows:(db.terminalSettlements||[]).filter(s=>scope(s.branch)&&period(s.date)).map(s=>[s.date,BRANCH_NAME(s.branch),s.provider,s.terminalId,s.batchRef,s.expected,s.reportedTotal,s.variance,s.unmatchedAtSubmission,s.exceptionCountAtSubmission,s.status,s.reviewNotes||''])});
   sources.push({id:'cash',label:'Cash Counts',headers:['Date','Branch','Count','Actual','Expected','Variance'],rows:db.counts.filter(c=>scope(c.branch)&&period(c.date)).map(c=>[c.date,BRANCH_NAME(c.branch),c.kind,c.actual,c.expected,c.difference])});
+  if(online){
+   sources.push({id:'inventory',label:'Inventory Balance',headers:['SKU','Product','Branch','Units Available','Unit Price'],rows:online.products.filter(p=>scope(p.branch_id as BranchId)).map(p=>[p.sku,p.name,BRANCH_NAME(p.branch_id as BranchId),Number(p.stock_qty),Number(p.unit_price)])});
+   const byId=new Map(online.products.map(p=>[p.id,p]));
+   sources.push({id:'stock',label:'Stock Movement Ledger',headers:['Date','Branch','SKU','Product','Movement','Qty','Notes'],rows:online.movements.filter(m=>scope(m.branch_id as BranchId)&&period(m.created_at.slice(0,10))).map(m=>{const p=byId.get(m.product_id);return [m.created_at.slice(0,10),BRANCH_NAME(m.branch_id as BranchId),p?.sku||'',p?.name||'Unknown product',m.movement_type,Number(m.quantity_delta),m.reason||'']})});
+  } else {
   sources.push({id:'inventory',label:'Inventory Balance',headers:['Barcode','Product','Category','Branch','Units Available','Unit Cost','Reorder Level'],rows:db.inventory.filter(p=>scope(p.branch)&&!p.archivedAt).map(p=>[p.barcode,p.name,p.category,BRANCH_NAME(p.branch),stockAvailable(db,p),p.unitCost,p.reorderAt])});
   sources.push({id:'stock',label:'Stock Movement Ledger',headers:['Date','Branch','Barcode','Product','Movement','Qty','Reference','Notes'],rows:db.stockMovements.filter(m=>scope(m.branch)&&period(m.at.slice(0,10))).map(m=>{const p=db.inventory.find(i=>i.id===m.productId);const pos=db.pos.find(i=>i.id===m.posId);return [m.at.slice(0,10),BRANCH_NAME(m.branch),p?.barcode||'',p?.name||'Unknown product',m.kind,m.qty,pos?.no||m.receiptId||m.issueId||'',m.notes||'']})});
+  }
  }
  if(role!=='cashier'){
   sources.push({id:'parts',label:'Parts Purchases',headers:['Date','Part','Supplier','Plate','Vehicle','Branch','Qty','Unit Cost','Amount','Linked POS','Status'],rows:db.fundEntries.filter(e=>e.fund==='RFP'&&e.kind==='expense'&&scope(e.branch)&&period(e.date)).map(e=>{const linked=db.pos.find(p=>p.id===e.linkedPosId);const vehicle=linked?.vehicle||db.pos.find(p=>p.branch===e.branch&&normalizePlate(p.plate)===normalizePlate(e.plate||''))?.vehicle||e.car||'';return [e.date,e.description,e.payee,e.plate||'',vehicle,BRANCH_NAME(e.branch),e.quantity||1,e.unitCost||0,e.amount,linked?.no||'',e.status]})});
