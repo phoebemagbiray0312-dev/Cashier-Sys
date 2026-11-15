@@ -121,6 +121,9 @@ export default function Home(){
  useEffect(()=>{if(!('serviceWorker' in navigator))return;const register=()=>navigator.serviceWorker.register('/sw.js').catch(()=>{});if(document.readyState==='complete')register();else{window.addEventListener('load',register);return()=>window.removeEventListener('load',register)}},[]);
  const user=onlineIdentity?db.users.find(u=>u.id===session&&u.id==='supabase:'+onlineIdentity.id&&u.active&&u.role===onlineIdentity.role):undefined;
  useEffect(()=>{if(!user||user.role!=='cashier')return;const t=setInterval(()=>{if(hourPH()>=9){setDB(old=>makeIncidentIfNeeded(old,user));}if(timeMinutesPH()>=18*60){setDB(old=>enforceClosingDeadlines(old,user));}},60000);return()=>clearInterval(t);},[user?.id]);
+ // v9.50: past operating days (a BOD was submitted) with no EOD / Sales Turnover become incidents when the cashier
+ // opens the app — not only if the app happened to be open at 6 PM. Runs after online records are loaded.
+ function enforcePastDeadlines(old:Database,u:User){const today=todayPH();const since=new Date(Date.now()-30*864e5).toISOString().slice(0,10);let next=old;const days=[...new Set(old.counts.filter(c=>c.branch===u.branch&&c.kind==='BOD'&&c.date<today&&c.date>=since).map(c=>c.date))].sort();for(const day of days){if(!next.counts.some(c=>c.branch===u.branch&&c.date===day&&c.kind==='EOD'))next=makeIncident(next,u,day,'Missed Closing',`EOD not submitted by 6 PM on ${datePH(day)}.`);if(!next.turnovers.some(t=>t.branch===u.branch&&t.date===day&&(t.kind||'Sales')==='Sales'))next=makeIncident(next,u,day,'Missed Sales Turnover',`Sales Turnover not submitted by 6 PM on ${datePH(day)}.`);}return next;}
  function enforceClosingDeadlines(old:Database,u:User){let next=old;const day=todayPH();if(!next.counts.some(c=>c.userId===u.id&&c.date===day&&c.kind==='EOD'))next=makeIncident(next,u,day,'Missed Closing',`EOD not submitted by 6 PM on ${day}.`);if(!next.turnovers.some(t=>t.branch===u.branch&&t.date===day&&(t.kind||'Sales')==='Sales'))next=makeIncident(next,u,day,'Missed Sales Turnover',`Sales Turnover not submitted by 6 PM on ${day}.`);return next;}
  function makeIncidentIfNeeded(old:Database,u:User){const today=todayPH();if(old.counts.some(c=>c.userId===u.id&&c.date===today&&c.kind==='BOD'))return old;return makeIncident(old,u,today,'Missed Opening',`Opening cash count not submitted by 9:00 AM on ${datePH(today)}.`)}
  // Administrators can see all branches; Parts Buyers can switch operational branches.
@@ -200,6 +203,7 @@ export default function Home(){
  // v9.28: funds, disbursements, cash counts, turnovers, approvals, terminal, audit & settings live in Supabase too.
  const [recSync,setRecSync]=useState<'loading'|'saved'|'saving'|'offline'|'error'>('loading');
  const [recReady,setRecReady]=useState(false);
+ useEffect(()=>{if(!recReady||!user||user.role!=='cashier')return;setDB(old=>enforcePastDeadlines(old,user));},[recReady,user?.id]);
  const recSyncer=useRef<RecordSyncer|null>(null);
  function getRecSyncer(){
   if(!recSyncer.current)recSyncer.current=new RecordSyncer({
