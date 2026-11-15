@@ -828,3 +828,9 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .uc-muted{color:#667085;font-size:12px;padding:8px 10px;margin:0}
 .uc-err{color:#b42318;font-size:12px;margin:0}
 .uc-docs button{display:inline-flex;align-items:center;gap:4px}
+/* v9.57 — row actions as icons */
+.row-icon-actions{display:flex;gap:6px;justify-content:flex-end}
+.row-icon{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #d0d5dd;background:#fff;border-radius:8px;color:#344054;cursor:pointer}
+.row-icon:hover{background:#f9fafb;border-color:#98a2b3}
+.row-icon-danger{color:#b42318}
+.row-icon-danger:hover{background:#fef3f2;border-color:#fda29b}
