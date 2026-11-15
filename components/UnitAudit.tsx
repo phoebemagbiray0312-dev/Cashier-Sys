@@ -7,16 +7,15 @@
 import { useState } from 'react';
 import { CheckCircle2, CircleAlert, Clock3, FileImage, Plus, X } from 'lucide-react';
 import type { Database, FundEntry, POS, RFPReceiptRecord } from '@/lib/data';
-import { expenseGross, normalizePlate, pesos, posTotal } from '@/lib/data';
+import { expenseGross, pesos, posTotal, rfpUnitPosId } from '@/lib/data';
 
 type Doc = { name: string; data: string };
 type Row = { key: string; kind: 'Parts' | 'Expense'; title: string; sub: string; amount: number; state: 'ok' | 'missing' | 'bad'; note: string; docs: { label: string; doc?: Doc }[] };
 
 export default function UnitAudit({ db, pos, canAddExpense, onAddExpense }: { db: Database; pos: POS; canAddExpense: boolean; onAddExpense: () => void }) {
   const [preview, setPreview] = useState<Doc | null>(null);
-  const plate = normalizePlate(pos.plate);
   const live = (e: FundEntry) => e.kind === 'expense' && e.status !== 'Rejected';
-  const poLines = db.fundEntries.filter(e => e.fund === 'RFP' && live(e) && (e.linkedPosId === pos.id || (!e.linkedPosId && e.branch === pos.branch && normalizePlate(e.plate || '') === plate)));
+  const poLines = db.fundEntries.filter(e => e.fund === 'RFP' && live(e) && rfpUnitPosId(db, e) === pos.id);
   const receipts = (db.rfpReceipts || []) as RFPReceiptRecord[];
   const current = (ids: Set<string>) => receipts.filter(r => r.type === 'receipt' && ids.has(r.purchaseId) && !receipts.some(x => x.replacesId === r.id)).sort((a, b) => b.at.localeCompare(a.at))[0];
 

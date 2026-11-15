@@ -551,7 +551,7 @@ export function posCostBreakdown(p:POS,db?:Database){
    if(possible){const row=lines.find(x=>x.id===manual.id);if(row)row.amount=Math.round((row.amount-possible*manual.cost)*100)/100;remaining.set(manual.id,(remaining.get(manual.id)||0)-possible);left-=possible;}
   }
  }
- const linked=db.fundEntries.filter(e=>e.fund==='RFP'&&e.kind==='expense'&&e.status!=='Rejected'&&e.linkedPosId===p.id);
+ const linked=db.fundEntries.filter(e=>e.fund==='RFP'&&e.kind==='expense'&&e.status!=='Rejected'&&rfpUnitPosId(db,e)===p.id);
  for(const part of linked){absorb(part.description,part.quantity||1);lines.push({id:part.id,description:part.description,source:`PB / RFP · ${part.no} · ${part.payee}`,amount:part.amount});}
  for(const out of postedStockOuts(db,p.id)){
   const product=db.inventory.find(x=>x.id===out.productId);if(!product)continue;
@@ -560,7 +560,20 @@ export function posCostBreakdown(p:POS,db?:Database){
   absorb(product.name,net);
   lines.push({id:out.id,description:`${product.name} · ${net} ${product.unit}`,source:`From Inventory · ${out.id.slice(0,8)}`,amount:Math.round(net*out.unitCost*100)/100});
  }
+ // v9.49: the cashier's other expenses for this unit (RF, linked from the expense form)
+ for(const e of db.fundEntries.filter(e=>e.fund==='RF'&&e.kind==='expense'&&e.status!=='Rejected'&&e.linkedPosId===p.id))lines.push({id:e.id,description:`${e.category} · ${e.payee}`,source:`Unit expense (RF) · ${e.no}`,amount:expenseGross(e)});
  return lines.filter(r=>r.amount>0);
+}
+/** v9.49: which POS (unit) a PB purchase belongs to. Uses the saved link; otherwise the same-branch POS with the
+ * same plate that was opened on or before the purchase date (latest one), else the earliest later one.
+ * This keeps a PO counted on its unit even when it was bought after the POS was closed, and never on two POS. */
+export function rfpUnitPosId(db:Database,e:FundEntry):string|undefined{
+ if(e.linkedPosId)return e.linkedPosId;
+ const plate=normalizePlate(e.plate||'');if(!plate)return undefined;
+ const same=db.pos.filter(p=>p.branch===e.branch&&normalizePlate(p.plate)===plate).sort((a,b)=>a.createdAt.localeCompare(b.createdAt));
+ if(!same.length)return undefined;
+ const before=same.filter(p=>p.createdAt.slice(0,10)<=e.date);
+ return (before.length?before[before.length-1]:same[0]).id;
 }
 export function posCostTotals(p:POS,db:Database){
  const rows=posCostBreakdown(p,db);
