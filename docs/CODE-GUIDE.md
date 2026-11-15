@@ -149,6 +149,8 @@ Kasama: RF/RFP fund entries, disbursement requests, cash counts, turnovers, inci
 | Resibo ng cashier sa PO: pinayagan sa database (`rfpReceipts`); "Saving…" muna bago "Receipt saved" | `supabase/migrations/20261115_rfp_receipts_collection.sql`; `components/PurchaseOrders.tsx` → `pending` |
 | Costs ng unit: kasama ang PO ni PB kahit sarado na ang POS, at ang RF expense para sa unit | `lib/data.ts` → `rfpUnitPosId`, `posCostBreakdown` |
 | Hindi naisumiteng EOD / Sales Turnover sa nakaraang araw → incident pag-login ng cashier | `app/page.tsx` → `enforcePastDeadlines` |
+| Reports: kapag pinindot ang transaction, kusang mag-scroll sa detalye | `app/page.tsx` → hanapin `v9.51: when a report row` |
+| Spreadsheets/Documents: Inventory Balance at Stock Movement galing na sa Supabase | `lib/report-studio.ts` → `OnlineInventory`; `app/page.tsx` → `studioInv` |
 | Record Expense (RF) na may "For unit" para ikabit sa POS; may "Add unit expense" button sa POS | `app/page.tsx` → `createExpense` (`unitPosId`, `linkedPosId`) |
 | PO form ni PB: listahan ng bukas na unit sa lahat ng branch, o mag-type ng bagong unit | `app/page.tsx` → hanapin `Open units waiting for parts` |
 | PB puwedeng "All branches" (walang branch) sa database | `supabase/migrations/20261112_pb_all_branches.sql` |
