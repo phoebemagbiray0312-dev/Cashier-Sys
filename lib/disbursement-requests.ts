@@ -74,8 +74,9 @@ function audit(db:Database,r:DisbursementRequest,u:User,action:string,descriptio
  return log(db,u.id,`Disbursement: ${action}`,`${r.requestNo} · ${BRANCH_NAME(r.branch)} · ${u.role} · ${description}`);
 }
 function nextNo(db:Database,branch:BranchId){
- // Stable, globally unique even with deleted drafts and different branches; not a reused sequence.
- let id='';do{id=`DR-${branch}-${todayPH().replace(/-/g,'')}-${uid().replace(/-/g,'').slice(0,12).toUpperCase()}`;}while(requests(db).some(r=>r.requestNo===id));return id;
+ // v9.60: short per-branch sequence, e.g. UCM-DR-0001. Every stored request (deleted drafts included) counts, so numbers are never reused.
+ const pre=`${branch}-DR-`;const max=Math.max(0,...requests(db).map(r=>r.requestNo).filter(n=>n.startsWith(pre)).map(n=>Number(n.slice(pre.length))||0));
+ return `${pre}${String(max+1).padStart(4,'0')}`;
 }
 export function createDisbursementDraft(db:Database,u:User,fields:DisbursementDraftFields):Database {
  validateFields(fields,u);const at=clock();const r:DisbursementRequest={

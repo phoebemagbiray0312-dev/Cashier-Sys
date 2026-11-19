@@ -211,9 +211,9 @@ export function branchFundTotals(db:Database,fund:Fund){
 export function nextNumber(db:Database,branch:BranchId,type:'RF'|'RFP'|'POS'):string {
   /* v9.58: Parts Buyer purchase orders read UCM-PO-0001 (short); older UCM-RFP-00000001 numbers stay as they are */
   if(type==='RFP'){const pre=`${branch}-PO-`;const m=Math.max(0,...db.fundEntries.filter(v=>v.fund==='RFP'&&v.no.startsWith(pre)).map(v=>Number(v.no.slice(pre.length))||0));return `${pre}${String(m+1).padStart(4,'0')}`;}
-  const prefix=`${branch}-${type}-`;/* v9.39: RF numbers are short, e.g. UCM-RF-00000001 */const all=type==='POS'?[...db.pos.map(v=>v.no),...(db.deletedPOSDrafts||[]).map(v=>v.no)]:db.fundEntries.filter(v=>v.fund===type).map(v=>v.no);
+  const prefix=`${branch}-${type}-`;const all=type==='POS'?[...db.pos.map(v=>v.no),...(db.deletedPOSDrafts||[]).map(v=>v.no)]:db.fundEntries.filter(v=>v.fund===type).map(v=>v.no);
   const max=Math.max(0,...all.filter(v=>v.startsWith(prefix)).map(v=>Number(v.slice(prefix.length))||0));
-  return `${prefix}${String(max+1).padStart(8,'0')}`;
+  return `${prefix}${String(max+1).padStart(4,'0')}`;/* v9.60: short numbers, e.g. UCM-POS-0001 / UCM-RF-0001 */
 }
 export function log(db:Database,by:string,action:string,detail:string):Database {return {...db,audit:[{id:uid(),at:new Date().toISOString(),by,action,detail},...db.audit].slice(0,1000)};}
 export const posLineTotal=(i:POSLine)=>i.lineTotal??Math.round(i.qty*i.price*100)/100;
