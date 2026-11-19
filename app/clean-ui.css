@@ -834,3 +834,12 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .row-icon:hover{background:#f9fafb;border-color:#98a2b3}
 .row-icon-danger{color:#b42318}
 .row-icon-danger:hover{background:#fef3f2;border-color:#fda29b}
+/* v9.58 — attach supplier receipt inside Unit costs; stock rows without price */
+.uc-attach{display:flex;flex-direction:column;gap:8px;margin-top:8px;padding:10px;border:1px solid #f1d27a;background:#fffbeb;border-radius:10px}
+.uc-attach label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:#344054}
+.uc-attach input:not([type=file]){min-height:36px;border:1px solid #d0d5dd;border-radius:8px;padding:0 10px;font:inherit;background:#fff}
+.uc-attach .uc-file{flex-direction:row;align-items:center;gap:6px;border:1px dashed #d0a400;border-radius:8px;padding:9px 10px;background:#fff;cursor:pointer;font-weight:600}
+.uc-attach .uc-file input{display:none}
+.uc-attach-actions{display:flex;justify-content:flex-end;gap:8px}
+.uc-attach-btn{font-weight:700}
+.uc-noprice{font-size:12px;font-weight:600;color:#667085}

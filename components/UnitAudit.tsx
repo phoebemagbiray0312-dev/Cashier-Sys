@@ -5,19 +5,40 @@
  * other expenses. Each row shows whether its proof is complete, so missing receipts stand out.
  */
 import { useMemo, useState } from 'react';
-import { CheckCircle2, CircleAlert, Clock3, FileImage, PackageMinus, Plus, Undo2, X } from 'lucide-react';
+import { Camera, CheckCircle2, CircleAlert, Clock3, FileImage, PackageMinus, Plus, Undo2, Upload, X } from 'lucide-react';
+import { readFile } from '@/components/PurchaseOrders';
 import { listOnlineProducts, type OnlineProduct } from '@/lib/online-cashier';
 import { posStockUseCost } from '@/lib/online-inventory';
 import type { Database, FundEntry, POS, RFPReceiptRecord } from '@/lib/data';
 import { expenseGross, pesos, posTotal, rfpUnitPosId } from '@/lib/data';
 
 type Doc = { name: string; data: string };
-type Row = { key: string; kind: 'Parts' | 'Expense' | 'Stock'; returnable?: number; title: string; sub: string; amount: number; state: 'ok' | 'missing' | 'bad'; note: string; docs: { label: string; doc?: Doc }[] };
+type Row = { key: string; kind: 'Parts' | 'Expense' | 'Stock'; returnable?: number; noPrice?: boolean; po?: { total: number; firstId: string; branch: string; currentId?: string }; title: string; sub: string; amount: number; state: 'ok' | 'missing' | 'bad'; note: string; docs: { label: string; doc?: Doc }[] };
 
-export default function UnitAudit({ db, pos, canAddExpense, onAddExpense, canUseStock = false, onTakeStock, onReturnStock }: {
+export default function UnitAudit({ db, pos, canAddExpense, onAddExpense, canUseStock = false, onTakeStock, onReturnStock, canAttachReceipt = false, userName = '', onSaveReceipts }: {
   db: Database; pos: POS; canAddExpense: boolean; onAddExpense: () => void;
   canUseStock?: boolean; onTakeStock?: (productId: string, qty: number, note: string) => Promise<void>; onReturnStock?: (useId: string, qty: number) => Promise<void>;
+  canAttachReceipt?: boolean; userName?: string; onSaveReceipts?: (next: RFPReceiptRecord[]) => boolean;
 }) {
+  // v9.58: attach the supplier receipt for a Parts Buyer PO right here, next to PB's payment
+  const [attachFor, setAttachFor] = useState<string | null>(null);
+  const [rcFile, setRcFile] = useState<Doc | null>(null); const [rcAmt, setRcAmt] = useState(''); const [rcRef, setRcRef] = useState(''); const [rcMsg, setRcMsg] = useState('');
+  function startAttach(r: Row) { setAttachFor(r.key); setRcFile(null); setRcAmt(String(r.po?.total ?? '')); setRcRef(''); setRcMsg(''); }
+  function saveAttach(r: Row) {
+    if (!r.po || !onSaveReceipts) return;
+    const n = Number(rcAmt);
+    if (!rcFile) { setRcMsg('Take a photo or attach the supplier receipt first.'); return; }
+    if (!Number.isFinite(n) || n <= 0) { setRcMsg('Enter the amount written on the receipt.'); return; }
+    const matches = Math.abs(n - r.po.total) < 0.01;
+    const entry: RFPReceiptRecord = {
+      id: crypto.randomUUID(), branch: r.po.branch as RFPReceiptRecord['branch'], purchaseId: r.po.firstId, type: 'receipt', amount: n, reference: rcRef.trim(),
+      proof: rcFile.data, proofName: rcFile.name, status: matches ? 'Matched' : 'Discrepancy', by: userName, at: new Date().toISOString(),
+      ...(matches ? {} : { reason: `Receipt ${pesos(n)} vs PO ${pesos(r.po.total)}` }),
+      ...(r.po.currentId ? { replacesId: r.po.currentId } : {}),
+    };
+    if (onSaveReceipts([entry, ...receipts])) { setAttachFor(null); setRcFile(null); }
+    else setRcMsg('Could not save. Please try again.');
+  }
   const [preview, setPreview] = useState<Doc | null>(null);
   // v9.56: parts taken from the branch's live inventory for this unit
   const [stockOpen, setStockOpen] = useState(false);
@@ -60,7 +81,7 @@ export default function UnitAudit({ db, pos, canAddExpense, onAddExpense, canUse
       const r = current(new Set(ls.map(l => l.id)));
       const state: Row['state'] = !r ? 'missing' : r.status === 'Discrepancy' ? 'bad' : 'ok';
       return {
-        key: no, kind: 'Parts' as const, title: ls[0].payee, sub: `${no} · ${ls.map(l => l.description).join(', ')}`, amount, state,
+        key: no, kind: 'Parts' as const, title: ls[0].payee, sub: `${no} · ${ls.map(l => l.description).join(', ')}`, amount, state, po: { total: amount, firstId: ls[0].id, branch: ls[0].branch, currentId: r?.id },
         note: state === 'missing' ? 'Supplier receipt missing' : state === 'bad' ? `Receipt ${pesos(r!.amount)} ≠ PO` : 'Payment + receipt complete',
         docs: [{ label: 'PB payment', doc: ls.find(l => l.proof?.data)?.proof }, { label: 'Supplier receipt', doc: r?.proof ? { name: r.proofName || 'Receipt', data: r.proof } : undefined }],
       };
@@ -74,7 +95,7 @@ export default function UnitAudit({ db, pos, canAddExpense, onAddExpense, canUse
       const c = posStockUseCost(u); const left = u.qty - u.returned;
       return {
         key: u.id, kind: 'Stock' as const, title: u.name, sub: `${u.sku ? u.sku + ' · ' : ''}${left} pc${left === 1 ? '' : 's'} from branch stock${u.returned ? ` (${u.returned} returned)` : ''}`,
-        amount: c ?? 0, state: (c === null ? 'missing' : 'ok') as Row['state'], note: c === null ? 'Price not set yet — ask Admin to set the price in Inventory' : 'Taken from inventory',
+        amount: c ?? 0, noPrice: c === null, state: 'ok' as Row['state'], note: 'Taken from branch stock',
         docs: [], returnable: left,
       };
     }),
@@ -112,9 +133,16 @@ export default function UnitAudit({ db, pos, canAddExpense, onAddExpense, canUse
       <ul className="uc-list">{rows.map(r => <li key={r.key} className={'uc-' + r.state}>
         <span className="uc-icon">{r.state === 'ok' ? <CheckCircle2 size={17} /> : r.state === 'bad' ? <CircleAlert size={17} /> : <Clock3 size={17} />}</span>
         <span className="uc-main"><span className="uc-kind">{r.kind === 'Parts' ? 'Parts (PO)' : r.kind === 'Stock' ? 'From inventory' : 'Expense'}</span><strong>{r.title}</strong><small>{r.sub}</small>
-          <span className="uc-docs">{r.docs.map(d => d.doc?.data ? <button key={d.label} type="button" onClick={() => setPreview(d.doc!)}><FileImage size={12} /> {d.label}</button> : <em key={d.label}>{d.label}: none</em>)}<i>{r.note}</i>{r.kind === 'Stock' && canUseStock && onReturnStock && <button type="button" onClick={() => void giveBack(r.key, r.returnable || 0)}><Undo2 size={12} /> Return to stock</button>}</span>
+          <span className="uc-docs">{r.docs.map(d => d.doc?.data ? <button key={d.label} type="button" onClick={() => setPreview(d.doc!)}><FileImage size={12} /> {d.label}</button> : <em key={d.label}>{d.label}: none</em>)}<i>{r.note}</i>{r.kind === 'Stock' && canUseStock && onReturnStock && <button type="button" onClick={() => void giveBack(r.key, r.returnable || 0)}><Undo2 size={12} /> Return to stock</button>}{r.kind === 'Parts' && canAttachReceipt && onSaveReceipts && attachFor !== r.key && <button type="button" className="uc-attach-btn" onClick={() => startAttach(r)}><Upload size={12} /> {r.state === 'missing' ? 'Attach supplier receipt' : 'Replace receipt'}</button>}</span>
+          {attachFor === r.key && <span className="uc-attach">
+            <label className="uc-file"><Camera size={14} /> {rcFile ? rcFile.name : 'Take photo or choose file'}<input type="file" accept="image/*,application/pdf" capture="environment" onChange={async e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; try { setRcFile(await readFile(f)); setRcMsg(''); } catch (er) { setRcMsg(er instanceof Error ? er.message : 'Could not read file.'); } }} /></label>
+            <label>Amount on receipt<input type="number" min="0" step="0.01" value={rcAmt} onChange={e => setRcAmt(e.target.value)} /></label>
+            <label>Receipt no. (optional)<input value={rcRef} maxLength={60} onChange={e => setRcRef(e.target.value)} /></label>
+            {rcMsg && <em className="uc-err">{rcMsg}</em>}
+            <span className="uc-attach-actions"><button type="button" className="button button-secondary" onClick={() => setAttachFor(null)}>Cancel</button><button type="button" className="button button-primary" onClick={() => saveAttach(r)}>Save receipt</button></span>
+          </span>}
         </span>
-        <b className="uc-amt">{pesos(r.amount)}</b>
+        <b className="uc-amt">{r.noPrice ? <span className="uc-noprice">No price</span> : pesos(r.amount)}</b>
       </li>)}</ul>
     </>}
     {preview && <div className="ua-preview" role="dialog" aria-modal="true" aria-label={preview.name} onClick={() => setPreview(null)}>

@@ -23,7 +23,7 @@ const STAGE: Record<Stage, { label: string; cls: string }> = {
   problem: { label: "Receipt doesn't match", cls: 'po-st-bad' },
 };
 
-function readFile(file: File): Promise<Doc> {
+export function readFile(file: File): Promise<Doc> {
   return new Promise((resolve, reject) => {
     if (file.size > 2_500_000) return reject(new Error('File is too large (max 2.5 MB). Take a smaller photo or compress it.'));
     if (!(file.type.startsWith('image/') || file.type === 'application/pdf')) return reject(new Error('Use a photo (JPG/PNG/WebP) or a PDF.'));
