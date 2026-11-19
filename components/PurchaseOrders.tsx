@@ -9,7 +9,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Camera, CheckCircle2, ChevronRight, CircleAlert, Clock3, FileImage, Search, Upload, X } from 'lucide-react';
 import type { BranchId, FundEntry, POS, RFPReceiptRecord } from '@/lib/data';
-import { BRANCH_NAME, expenseGross, normalizePlate, pesos } from '@/lib/data';
+import { BRANCH_NAME, expenseGross, pesos, rfpUnitPosId } from '@/lib/data';
+import type { Database } from '@/lib/data';
 
 type Stage = 'receipt' | 'done' | 'problem';
 type Doc = { name: string; data: string };
@@ -79,7 +80,7 @@ export default function PurchaseOrders({ purchases, pos, role, branch, userName,
       const refunds = records.filter(r => r.type === 'refund' && ids.has(r.purchaseId));
       const total = ls.reduce((n, l) => n + expenseGross(l), 0);
       const stage: Stage = !receipt ? 'receipt' : receipt.status === 'Discrepancy' ? 'problem' : 'done';
-      const unit = pos.find(p => p.id === first.linkedPosId) || pos.filter(p => p.branch === first.branch && normalizePlate(p.plate) === normalizePlate(first.plate || '')).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      const unitId = rfpUnitPosId({ pos } as unknown as Database, first); const unit = pos.find(p => p.id === unitId); /* v9.59: same rule as Unit costs — the POS open on the PO date, not the newest one */
       return { no, date: first.date, branch: first.branch, plate: first.plate || '', car: first.car || unit?.vehicle || '', supplier: first.payee, lines: ls, total, payment: ls.find(l => l.proof?.data)?.proof, receipt, refunds, stage, unit };
     }).sort((a, b) => (a.stage === 'done' ? 1 : 0) - (b.stage === 'done' ? 1 : 0) || b.date.localeCompare(a.date) || b.no.localeCompare(a.no));
   }, [purchases, pos, branch, records]);

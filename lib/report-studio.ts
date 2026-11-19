@@ -176,7 +176,7 @@ export function parseStudioFiles(raw:string|null):StudioFile[] {
  }catch {return [];}
 }
 
-import {BRANCH_NAME,posClosedDate,posTotal,paidTotal,posCOGS,stockAvailable,normalizePlate} from './data';
+import {BRANCH_NAME,posClosedDate,posTotal,paidTotal,posCOGS,stockAvailable,normalizePlate,rfpUnitPosId} from './data';
 import type {Database,BranchId,Role} from './data';
 /** v9.51: live inventory from Supabase (cms_products / cms_stock_movements); when given it replaces the old browser copy. */
 export type OnlineInventory={products:{id:string;sku:string;name:string;branch_id:string;stock_qty:number;unit_price:number}[];movements:{product_id:string;branch_id:string;movement_type:string;quantity_delta:number;reason:string;created_at:string}[]};
@@ -200,7 +200,7 @@ export function studioSources(db:Database,role:Role,userBranch:BranchId,selected
   }
  }
  if(role!=='cashier'){
-  sources.push({id:'parts',label:'Parts Purchases',headers:['Date','Part','Supplier','Plate','Vehicle','Branch','Qty','Unit Cost','Amount','Linked POS','Status'],rows:db.fundEntries.filter(e=>e.fund==='RFP'&&e.kind==='expense'&&scope(e.branch)&&period(e.date)).map(e=>{const linked=db.pos.find(p=>p.id===e.linkedPosId);const vehicle=linked?.vehicle||db.pos.find(p=>p.branch===e.branch&&normalizePlate(p.plate)===normalizePlate(e.plate||''))?.vehicle||e.car||'';return [e.date,e.description,e.payee,e.plate||'',vehicle,BRANCH_NAME(e.branch),e.quantity||1,e.unitCost||0,e.amount,linked?.no||'',e.status]})});
+  sources.push({id:'parts',label:'Parts Purchases',headers:['Date','Part','Supplier','Plate','Vehicle','Branch','Qty','Unit Cost','Amount','Linked POS','Status'],rows:db.fundEntries.filter(e=>e.fund==='RFP'&&e.kind==='expense'&&scope(e.branch)&&period(e.date)).map(e=>{const linked=db.pos.find(p=>p.id===rfpUnitPosId(db,e));const vehicle=linked?.vehicle||db.pos.find(p=>p.branch===e.branch&&normalizePlate(p.plate)===normalizePlate(e.plate||''))?.vehicle||e.car||'';return [e.date,e.description,e.payee,e.plate||'',vehicle,BRANCH_NAME(e.branch),e.quantity||1,e.unitCost||0,e.amount,linked?.no||'',e.status]})});
  }
  if(role==='admin')sources.push({id:'audit',label:'Audit Trail',headers:['Timestamp','Actor','Action','Details'],rows:db.audit.filter(a=>period(a.at.slice(0,10))).map(a=>[a.at,a.by,a.action,a.detail])});
  return sources;
