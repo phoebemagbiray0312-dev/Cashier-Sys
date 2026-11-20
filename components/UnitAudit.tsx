@@ -63,12 +63,18 @@ export default function UnitAudit({ db, pos, canAddExpense, onAddExpense, canUse
     catch (e) { setErr(e instanceof Error ? e.message : 'Could not take the item.'); }
     finally { setBusy(false); }
   }
+  // v9.61: return to stock with a small form in the row (no browser popup)
+  const [retFor, setRetFor] = useState<string | null>(null); const [retQty, setRetQty] = useState(1); const [retBusy, setRetBusy] = useState(false); const [retErr, setRetErr] = useState('');
+  function startReturn(id: string) { setRetFor(id); setRetQty(1); setRetErr(''); }
   async function giveBack(id: string, max: number) {
     if (!onReturnStock) return;
-    const v = window.prompt(`How many to return to inventory? (max ${max})`, String(max)); if (v === null) return;
-    const n = Number(v); if (!Number.isFinite(n) || n <= 0 || n > max) { window.alert(`Enter a number from 1 to ${max}.`); return; }
-    try { await onReturnStock(id, n); setProducts(null); } catch (e) { window.alert(e instanceof Error ? e.message : 'Could not return the item.'); }
+    if (!Number.isInteger(retQty) || retQty < 1 || retQty > max) { setRetErr(`Mula 1 hanggang ${max} lang.`); return; }
+    setRetBusy(true); setRetErr('');
+    try { await onReturnStock(id, retQty); setProducts(null); setRetFor(null); }
+    catch (e) { setRetErr(e instanceof Error ? e.message : 'Could not return the item.'); }
+    finally { setRetBusy(false); }
   }
+
   const live = (e: FundEntry) => e.kind === 'expense' && e.status !== 'Rejected';
   const poLines = db.fundEntries.filter(e => e.fund === 'RFP' && live(e) && rfpUnitPosId(db, e) === pos.id);
   const receipts = (db.rfpReceipts || []) as RFPReceiptRecord[];
@@ -133,7 +139,18 @@ export default function UnitAudit({ db, pos, canAddExpense, onAddExpense, canUse
       <ul className="uc-list">{rows.map(r => <li key={r.key} className={'uc-' + r.state}>
         <span className="uc-icon">{r.state === 'ok' ? <CheckCircle2 size={17} /> : r.state === 'bad' ? <CircleAlert size={17} /> : <Clock3 size={17} />}</span>
         <span className="uc-main"><span className="uc-kind">{r.kind === 'Parts' ? 'Parts (PO)' : r.kind === 'Stock' ? 'From inventory' : 'Expense'}</span><strong>{r.title}</strong><small>{r.sub}</small>
-          <span className="uc-docs">{r.docs.map(d => d.doc?.data ? <button key={d.label} type="button" onClick={() => setPreview(d.doc!)}><FileImage size={12} /> {d.label}</button> : <em key={d.label}>{d.label}: none</em>)}<i>{r.note}</i>{r.kind === 'Stock' && canUseStock && onReturnStock && <button type="button" onClick={() => void giveBack(r.key, r.returnable || 0)}><Undo2 size={12} /> Return to stock</button>}{r.kind === 'Parts' && canAttachReceipt && onSaveReceipts && attachFor !== r.key && <button type="button" className="uc-attach-btn" onClick={() => startAttach(r)}><Upload size={12} /> {r.state === 'missing' ? 'Attach supplier receipt' : 'Replace receipt'}</button>}</span>
+          <span className="uc-docs">{r.docs.map(d => d.doc?.data ? <button key={d.label} type="button" onClick={() => setPreview(d.doc!)}><FileImage size={12} /> {d.label}</button> : <em key={d.label}>{d.label}: none</em>)}<i>{r.note}</i>{r.kind === 'Stock' && canUseStock && onReturnStock && retFor !== r.key && <button type="button" onClick={() => startReturn(r.key)}><Undo2 size={12} /> Return to stock</button>}{r.kind === 'Parts' && canAttachReceipt && onSaveReceipts && attachFor !== r.key && <button type="button" className="uc-attach-btn" onClick={() => startAttach(r)}><Upload size={12} /> {r.state === 'missing' ? 'Attach supplier receipt' : 'Replace receipt'}</button>}</span>
+          {retFor === r.key && <span className="uc-return">
+            <strong>Ibabalik sa stock</strong>
+            <span className="uc-return-row">
+              <button type="button" aria-label="Bawasan" disabled={retBusy || retQty <= 1} onClick={() => { setRetQty(q => Math.max(1, q - 1)); setRetErr(''); }}>−</button>
+              <input type="number" min={1} max={r.returnable || 1} step={1} value={retQty} onChange={e => { setRetQty(Math.floor(Number(e.target.value) || 0)); setRetErr(''); }} aria-label="Ilan ang ibabalik" />
+              <button type="button" aria-label="Dagdagan" disabled={retBusy || retQty >= (r.returnable || 1)} onClick={() => { setRetQty(q => Math.min(r.returnable || 1, q + 1)); setRetErr(''); }}>+</button>
+              <small>sa {r.returnable} na ginamit</small>
+              <span className="uc-return-actions"><button type="button" className="button button-secondary" disabled={retBusy} onClick={() => setRetFor(null)}>Cancel</button><button type="button" className="button button-primary" disabled={retBusy} onClick={() => void giveBack(r.key, r.returnable || 0)}><Undo2 size={14} /> {retBusy ? 'Ibinabalik…' : `Ibalik ${retQty} pc${retQty === 1 ? '' : 's'}`}</button></span>
+            </span>
+            {retErr && <em className="uc-err">{retErr}</em>}
+          </span>}
           {attachFor === r.key && <span className="uc-attach">
             <label className="uc-file"><Camera size={14} /> {rcFile ? rcFile.name : 'Take photo or choose file'}<input type="file" accept="image/*,application/pdf" capture="environment" onChange={async e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; try { setRcFile(await readFile(f)); setRcMsg(''); } catch (er) { setRcMsg(er instanceof Error ? er.message : 'Could not read file.'); } }} /></label>
             <label>Amount on receipt<input type="number" min="0" step="0.01" value={rcAmt} onChange={e => setRcAmt(e.target.value)} /></label>

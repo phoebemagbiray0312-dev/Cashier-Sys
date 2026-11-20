@@ -843,3 +843,13 @@ button.inventory-branch-open:hover{text-decoration:underline}
 .uc-attach-actions{display:flex;justify-content:flex-end;gap:8px}
 .uc-attach-btn{font-weight:700}
 .uc-noprice{font-size:12px;font-weight:600;color:#667085}
+/* v9.61 — return to stock inline form */
+.uc-return{display:flex;flex-direction:column;gap:8px;margin-top:8px;padding:10px 12px;border:1px solid #f1d27a;background:#fffbeb;border-radius:10px}
+.uc-return strong{font-size:13px;color:#854a0e}
+.uc-return-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.uc-return-row>button{width:34px;height:34px;border:1px solid #d0d5dd;background:#fff;border-radius:8px;font-size:18px;line-height:1;cursor:pointer;color:#344054}
+.uc-return-row>button:disabled{opacity:.45;cursor:not-allowed}
+.uc-return-row input{width:64px;height:34px;text-align:center;border:1px solid #d0d5dd;border-radius:8px;font:inherit;background:#fff}
+.uc-return-row small{color:#667085;font-size:12px}
+.uc-return-actions{margin-left:auto;display:flex;gap:8px}
+@media (max-width:560px){.uc-return-actions{margin-left:0;width:100%}.uc-return-actions .button{flex:1}}
