@@ -144,7 +144,7 @@ export default function UnitAudit({ db, pos, canAddExpense, onAddExpense, canUse
             <strong>Ibabalik sa stock</strong>
             <span className="uc-return-row">
               <button type="button" aria-label="Bawasan" disabled={retBusy || retQty <= 1} onClick={() => { setRetQty(q => Math.max(1, q - 1)); setRetErr(''); }}>−</button>
-              <input type="number" min={1} max={r.returnable || 1} step={1} value={retQty} onChange={e => { setRetQty(Math.floor(Number(e.target.value) || 0)); setRetErr(''); }} aria-label="Ilan ang ibabalik" />
+              <input type="number" min={1} max={r.returnable || 1} step={1} value={retQty} onChange={e => { const v = Math.floor(Number(e.target.value) || 0); setRetQty(Math.min(r.returnable || 1, Math.max(1, v))); setRetErr(v > (r.returnable || 1) ? `Hanggang ${r.returnable} lang ang puwedeng ibalik.` : ''); }} aria-label="Ilan ang ibabalik" />
               <button type="button" aria-label="Dagdagan" disabled={retBusy || retQty >= (r.returnable || 1)} onClick={() => { setRetQty(q => Math.min(r.returnable || 1, q + 1)); setRetErr(''); }}>+</button>
               <small>sa {r.returnable} na ginamit</small>
               <span className="uc-return-actions"><button type="button" className="button button-secondary" disabled={retBusy} onClick={() => setRetFor(null)}>Cancel</button><button type="button" className="button button-primary" disabled={retBusy} onClick={() => void giveBack(r.key, r.returnable || 0)}><Undo2 size={14} /> {retBusy ? 'Ibinabalik…' : `Ibalik ${retQty} pc${retQty === 1 ? '' : 's'}`}</button></span>
