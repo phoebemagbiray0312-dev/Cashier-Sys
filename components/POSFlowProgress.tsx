@@ -1,8 +1,8 @@
 'use client';
 const flows={
- standard:['Details','Quotation','COGS Review','Payment'],
- deposit:['Details','First Quotation','Downpayment'],
- final:['Details','Downpayment','Final Quotation','COGS Review','Full Payment'],
+ standard:['Customer & vehicle','Items','Costs','Payment'],
+ deposit:['Customer & vehicle','Items','Downpayment'],
+ final:['Customer & vehicle','Downpayment','Final items','Costs','Payment'],
 } as const;
 export default function POSFlowProgress({flow,step}:{flow:'standard'|'deposit'|'final';step:number}){
  const stages=flows[flow],total=stages.length,current=Math.max(1,Math.min(step,total));
